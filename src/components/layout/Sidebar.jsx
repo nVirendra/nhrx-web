@@ -47,8 +47,9 @@ const Sidebar = () => {
       children: [
         { label: "Employee Directory", path: "/admin/employees/directory" },
         { label: "Add Employee", path: "/admin/employees/add" },
-        { label: "Departments", path: "/employees/departments" },
-        { label: "Designations", path: "/employees/designations" },
+        { label: "Departments", path: "/admin/employees/departments" },
+        { label: "Designations", path: "/admin/employees/designations" },
+        { label: "Grade", path: "/admin/employees/grades" },
       ],
     },
 
@@ -135,8 +136,8 @@ const Sidebar = () => {
       label: "Travel",
       path: "/travel",
       children: [
-        { label: "Travel Requests", path: "/travel/requests" },
-        { label: "Daily Allowance", path: "/travel/da" },
+        { label: "Travel Requests", path: "/admin/travel/requests" },
+        { label: "Daily Allowance", path: "/admin/travel/da" },
       ],
     },
 
@@ -146,8 +147,8 @@ const Sidebar = () => {
       label: "Expenses",
       path: "/expenses",
       children: [
-        { label: "Expense Claims", path: "/expenses/claims" },
-        { label: "Approvals", path: "/expenses/approvals" },
+        { label: "Expense Claims", path: "/admin/expenses/claims" },
+        { label: "Approvals", path: "/admin/expenses/approvals" },
       ],
     },
 
