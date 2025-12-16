@@ -210,7 +210,7 @@ const EmployeeDirectory = () => {
                                         <Button
                                             variant="outline"
                                             size="sm"
-                                            onClick={() => router.push(`/employees/profile/${emp.id}`)}
+                                            onClick={() => router.push(`/admin/employees/profile/${emp.id}`)}
                                         >
                                             View
                                         </Button>

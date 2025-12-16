@@ -1,3 +1,4 @@
+"use client";
 import React, { useState } from "react";
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -8,7 +9,6 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
 import { Upload, Save } from "lucide-react";
 
 const EmployeeForm = ({ mode = "create", employeeData = {} }) => {

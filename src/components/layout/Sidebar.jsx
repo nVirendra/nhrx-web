@@ -45,8 +45,8 @@ const Sidebar = () => {
       label: "Employees",
       path: "/employees",
       children: [
-        { label: "Employee Directory", path: "/employees/directory" },
-        { label: "Add Employee", path: "/employees/add" },
+        { label: "Employee Directory", path: "/admin/employees/directory" },
+        { label: "Add Employee", path: "/admin/employees/add" },
         { label: "Departments", path: "/employees/departments" },
         { label: "Designations", path: "/employees/designations" },
       ],
@@ -58,10 +58,10 @@ const Sidebar = () => {
       label: "Attendance",
       path: "/attendance",
       children: [
-        { label: "Daily Attendance", path: "/attendance/daily" },
-        { label: "Monthly Report", path: "/attendance/monthly" },
-        { label: "Shifts & Policies", path: "/attendance/shifts" },
-        { label: "Regularization", path: "/attendance/regularization" },
+        { label: "Daily Attendance", path: "/admin/attendance/daily" },
+        { label: "Monthly Report", path: "/admin/attendance/monthly" },
+        { label: "Shifts & Policies", path: "/admin/attendance/shifts" },
+        { label: "Regularization", path: "/admin/attendance/regularization" },
       ],
     },
 
@@ -71,11 +71,11 @@ const Sidebar = () => {
       label: "Leaves",
       path: "/leaves",
       children: [
-        { label: "Leave Requests", path: "/leaves/requests" },
-        { label: "Leave Approvals", path: "/leaves/approvals" },
-        { label: "Leave Policies", path: "/leaves/policies" },
-        { label: "Holiday Calendar", path: "/leaves/holidays" },
-        { label: "Leave Calendar", path: "/leaves/calendar" },
+        { label: "Leave Requests", path: "/admin/leaves/requests" },
+        { label: "Leave Approvals", path: "/admin/leaves/approvals" },
+        { label: "Leave Policies", path: "/admin/leaves/policies" },
+        { label: "Holiday Calendar", path: "/admin/leaves/holidays" },
+        { label: "Leave Calendar", path: "/admin/leaves/calendar" },
       ],
     },
 
@@ -85,11 +85,11 @@ const Sidebar = () => {
       label: "Payroll",
       path: "/payroll",
       children: [
-        { label: "Salary Structure", path: "/payroll/salary-structure" },
-        { label: "Payslips", path: "/payroll/payslips" },
-        { label: "Deductions", path: "/payroll/deductions" },
-        { label: "Overtime", path: "/payroll/overtime" },
-        { label: "Reimbursements", path: "/payroll/reimbursements" },
+        { label: "Salary Structure", path: "/admin/payroll/salary-structure" },
+        { label: "Payslips", path: "/admin/payroll/payslips" },
+        { label: "Deductions", path: "/admin/payroll/deductions" },
+        { label: "Overtime", path: "/admin/payroll/overtime" },
+        { label: "Reimbursements", path: "/admin/payroll/reimbursements" },
       ],
     },
 
@@ -174,13 +174,28 @@ const Sidebar = () => {
     // },
 
     // USER MANAGEMENT
+
+    //  {
+    //   icon: Wallet,
+    //   label: "Payroll",
+    //   path: "/payroll",
+    //   children: [
+    //     { label: "Salary Structure", path: "/admin/payroll/salary-structure" },
+    //     { label: "Payslips", path: "/admin/payroll/payslips" },
+    //     { label: "Deductions", path: "/admin/payroll/deductions" },
+    //     { label: "Overtime", path: "/admin/payroll/overtime" },
+    //     { label: "Reimbursements", path: "/admin/payroll/reimbursements" },
+    //   ],
+    // },
+
+    //http://localhost:3000/admin/role-permissions/roles
     {
       icon: UserCircle,
       label: "Roles & Permissions",
-      path: "/roles-permissions",
+      path: "/role-permissions",
       children: [
-        { label: "All Roles", path: "/roles" },
-        { label: "All Permissions", path: "/roles/permissions" },
+        { label: "All Roles", path: "/admin/role-permissions/roles" },
+        { label: "All Permissions", path: "/admin/role-permissions/permissions" },
       ],
     },
 
@@ -210,6 +225,9 @@ const Sidebar = () => {
       icon: CheckCircle ,
       label: "Approvals",
       path: "/approvals/workflows",
+      children: [
+        { label: "Approval Flow", path: "/admin/approvals/workflows" },
+      ],
     },
 
     // SETTINGS
@@ -218,8 +236,8 @@ const Sidebar = () => {
       label: "Settings",
       path: "/settings",
       children: [
-        { label: "System Settings", path: "/settings/system" },
-        { label: "Modules & Subscription", path: "/settings/subscription" },
+        { label: "System Settings", path: "/admin/settings/system" },
+        { label: "Modules & Subscription", path: "/admin/settings/subscription" },
       ],
     },
   ];

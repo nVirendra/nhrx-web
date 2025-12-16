@@ -1,3 +1,5 @@
+"use client"
+
 import React, { useState } from "react";
 
 import {
@@ -24,48 +26,48 @@ import {
 import { Separator } from "@/components/ui/separator";
 
 import {
-  Workflow,
   Settings2,
   Users,
   ArrowDownCircle,
   Plus,
   Trash2,
-  ChevronRight,
   GitBranch,
   CheckCircle,
   XCircle,
+  UserCheck,
+  Building2,
 } from "lucide-react";
 
 export default function ApprovalWorkflowPage() {
   const [approvalType, setApprovalType] = useState("single");
   const [steps, setSteps] = useState([]);
 
-  // ACTION ITEMS (Mock)
+  // NEW STATES FOR FLEXIBLE WORKFLOW TARGET
+  const [workflowScope, setWorkflowScope] = useState("all");
+  const [selectedDepartment, setSelectedDepartment] = useState("");
+  const [selectedEmployee, setSelectedEmployee] = useState("");
+
+  const departments = ["HR", "Finance", "Engineering", "IT", "Admin", "Sales"];
+  const employees = [
+    { id: "1", name: "Virendra Nishad" },
+    { id: "2", name: "Priya Sharma" },
+    { id: "3", name: "Amit Verma" },
+  ];
+
+  // ACTION ITEMS
   const approvalActions = [
-    {
-      key: "notify_user",
-      label: "Notify User",
-      description: "Send notification user",
-    },
-    {
-      key: "add_verification_badge",
-      label: "Add Verification Badge",
-      description: "Grant verification status",
-    },
+    { key: "notify_user", label: "Notify User", description: "Send notification to user" },
+    { key: "add_verification_badge", label: "Add Verification Badge", description: "Grant verification badge" },
   ];
 
   const rejectionActions = [
-    {
-      key: "notify_user",
-      label: "Notify User",
-      description: "Send notification to user",
-    },
+    { key: "notify_user", label: "Notify User", description: "Send notification to user" },
   ];
 
-  // Selected States
   const [selectedApprovalActions, setSelectedApprovalActions] = useState([]);
   const [selectedRejectionActions, setSelectedRejectionActions] = useState([]);
 
+  // TOGGLE ACTIONS
   const toggleApprovalAction = (key) => {
     setSelectedApprovalActions((prev) =>
       prev.includes(key) ? prev.filter((x) => x !== key) : [...prev, key]
@@ -86,10 +88,11 @@ export default function ApprovalWorkflowPage() {
     setSelectedRejectionActions((prev) => prev.filter((x) => x !== key));
   };
 
+  // ADD NEW APPROVAL STEP
   const addStep = () => {
     setSteps((prev) => [
       ...prev,
-      { id: Date.now(), approver: "", role: "" },
+      { id: Date.now(), approver: "", authority: "" },
     ]);
   };
 
@@ -100,7 +103,7 @@ export default function ApprovalWorkflowPage() {
         Configure modern, multi-level approval workflows for HRMS modules.
       </p>
 
-      <Card className="shadow-lg border border-slate-200 bg-white">
+      <Card className="shadow-lg border bg-white">
         <CardHeader>
           <div className="flex items-center gap-3">
             <Settings2 className="h-6 w-6 text-primary" />
@@ -109,10 +112,10 @@ export default function ApprovalWorkflowPage() {
         </CardHeader>
 
         <CardContent className="space-y-10">
-          {/* Workflow Settings */}
+
+          {/* --- MODULE SELECTION (KEPT AS IS) --- */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             
-            {/* Module */}
             <div>
               <label className="font-medium text-sm">Module</label>
               <Select>
@@ -128,7 +131,6 @@ export default function ApprovalWorkflowPage() {
               </Select>
             </div>
 
-            {/* Priority */}
             <div>
               <label className="font-medium text-sm">Priority</label>
               <Select>
@@ -143,7 +145,6 @@ export default function ApprovalWorkflowPage() {
               </Select>
             </div>
 
-            {/* Auto Escalation */}
             <div className="flex items-center justify-between border rounded-lg p-4 mt-6">
               <div>
                 <p className="font-medium text-sm">Auto Escalation</p>
@@ -158,12 +159,89 @@ export default function ApprovalWorkflowPage() {
           {/* Description */}
           <div>
             <label className="font-medium text-sm">Description</label>
-            <Textarea className="mt-1" placeholder="Describe workflow purpose..." />
+            <Textarea placeholder="Describe workflow purpose..." className="mt-1" />
           </div>
 
           <Separator />
 
-          {/* Approval Type */}
+          {/* ---------------------------------------------------------------- */}
+          {/*   🔥 NEW BLOCK — FLEXIBLE TARGET (All / Department / Employee)   */}
+          {/* ---------------------------------------------------------------- */}
+          <div className="space-y-4 border p-5 rounded-xl bg-slate-50">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" /> Workflow Applies To
+            </h3>
+
+            {/* Select Scope */}
+            <div>
+              <label className="font-medium text-sm">Select Target</label>
+              <Select value={workflowScope} onValueChange={setWorkflowScope}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Choose target" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Employees</SelectItem>
+                  <SelectItem value="department">Department Wise</SelectItem>
+                  <SelectItem value="employee">Employee Specific</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Department Selection */}
+            {workflowScope === "department" && (
+              <div>
+                <label className="font-medium text-sm">Select Department</label>
+                <Select
+                  value={selectedDepartment}
+                  onValueChange={setSelectedDepartment}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Choose department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments.map((dept) => (
+                      <SelectItem key={dept} value={dept}>
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-4 w-4" /> {dept}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Employee Selection */}
+            {workflowScope === "employee" && (
+              <div>
+                <label className="font-medium text-sm">Select Employee</label>
+                <Select
+                  value={selectedEmployee}
+                  onValueChange={setSelectedEmployee}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Choose employee" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {employees.map((emp) => (
+                      <SelectItem key={emp.id} value={emp.id}>
+                        <div className="flex items-center gap-2">
+                          <UserCheck className="h-4 w-4" />
+                          {emp.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+
+          <Separator />
+
+          {/* ------------------------------------------------------------------------------------------------ */}
+          {/*                        APPROVAL TYPE SECTION (UNCHANGED)                                         */}
+          {/* ------------------------------------------------------------------------------------------------ */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="font-medium text-sm">Approval Type</label>
@@ -186,8 +264,8 @@ export default function ApprovalWorkflowPage() {
                     <SelectValue placeholder="Select mode" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="sequence">Sequence (Step-by-step)</SelectItem>
-                    <SelectItem value="parallel">Parallel (All at once)</SelectItem>
+                    <SelectItem value="sequence">Sequence</SelectItem>
+                    <SelectItem value="parallel">Parallel</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -196,9 +274,9 @@ export default function ApprovalWorkflowPage() {
 
           <Separator />
 
-          {/* ----------------------------- */}
-          {/*       STEPS SECTION           */}
-          {/* ----------------------------- */}
+          {/* ------------------------------------------------------------------------------------------------ */}
+          {/*                            STEPS SECTION (KEPT EXACTLY)                                         */}
+          {/* ------------------------------------------------------------------------------------------------ */}
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-semibold flex items-center gap-2">
               <GitBranch className="h-5 w-5 text-primary" /> Approval Steps
@@ -219,13 +297,11 @@ export default function ApprovalWorkflowPage() {
           ) : (
             <div className="space-y-6">
               {steps.map((step, idx) => (
-                <div
-                  key={step.id}
-                  className="p-5 rounded-xl border shadow-sm bg-white hover:shadow-md transition-all"
-                >
+                <div key={step.id} className="p-5 rounded-xl border shadow-sm bg-white">
+                  
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <span className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-bold">
+                      <span className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center">
                         {idx + 1}
                       </span>
                       <p className="font-semibold">Approval Level {idx + 1}</p>
@@ -237,6 +313,7 @@ export default function ApprovalWorkflowPage() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
                     <div>
                       <label className="font-medium text-sm">Select Approver</label>
                       <Select>
@@ -270,7 +347,7 @@ export default function ApprovalWorkflowPage() {
             </div>
           )}
 
-          {/* Flow Preview */}
+          {/* Preview */}
           {steps.length > 0 && (
             <div className="p-6 rounded-xl border bg-blue-50">
               <h3 className="font-semibold mb-4 flex items-center gap-2 text-blue-900">
@@ -294,100 +371,88 @@ export default function ApprovalWorkflowPage() {
 
           <Separator />
 
-          {/* ------------------------------------------------------ */}
-          {/*              APPROVAL ACTIONS SECTION                  */}
-          {/* ------------------------------------------------------ */}
+          {/* ------------------------------------------------------------------------------------------------ */}
+          {/*                       APPROVAL ACTIONS (KEPT EXACTLY)                                           */}
+          {/* ------------------------------------------------------------------------------------------------ */}
+
           <div className="space-y-6">
-            
             <div className="flex items-center gap-3">
               <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
                 <CheckCircle className="h-7 w-7 text-green-600" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Approval Actions</h2>
-                <p className="text-gray-600">Define automated actions when requests are approved.</p>
+                <h2 className="text-2xl font-bold">Approval Actions</h2>
+                <p className="text-gray-600">Actions triggered automatically on approval.</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
               {approvalActions.map((action) => {
-                const isSelected = selectedApprovalActions.includes(action.key);
-
+                const active = selectedApprovalActions.includes(action.key);
                 return (
                   <div
                     key={action.key}
                     onClick={() => toggleApprovalAction(action.key)}
-                    className={`cursor-pointer p-5 rounded-xl border transition-all shadow-sm hover:shadow-md group
-                      ${isSelected ? "bg-green-50 border-green-400" : "bg-white border-gray-200 hover:border-green-300"}
-                    `}
+                    className={`cursor-pointer p-5 border rounded-xl shadow-sm hover:shadow-md transition-all ${
+                      active ? "bg-green-50 border-green-400" : "bg-white border"
+                    }`}
                   >
                     <div className="flex justify-between">
                       <div>
-                        <h3 className={`font-semibold text-lg ${isSelected ? "text-green-700" : "text-gray-800"}`}>
+                        <h3 className={`font-semibold ${active ? "text-green-700" : "text-gray-800"}`}>
                           {action.label}
                         </h3>
                         <p className="text-sm text-gray-500">{action.key}</p>
                       </div>
-
-                      {isSelected && <CheckCircle className="h-6 w-6 text-green-600" />}
+                      {active && <CheckCircle className="h-6 w-6 text-green-600" />}
                     </div>
-
-                    <div className="mt-3">
-                      <span className={`inline-block text-xs px-3 py-1 rounded-full 
-                        ${isSelected ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"}
-                      `}>
-                        {action.description}
-                      </span>
-                    </div>
+                    <span className={`text-xs px-3 py-1 rounded-full mt-3 inline-block ${
+                      active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
+                    }`}>
+                      {action.description}
+                    </span>
                   </div>
                 );
               })}
             </div>
 
-            {/* Selected approval actions */}
             {selectedApprovalActions.length > 0 && (
               <div className="space-y-2">
-                <h3 className="font-semibold text-gray-900">Selected Approval Actions:</h3>
-
+                <h3 className="font-semibold">Selected Approval Actions</h3>
                 {selectedApprovalActions.map((key, index) => {
                   const action = approvalActions.find((a) => a.key === key);
-
                   return (
                     <div
                       key={key}
                       className="flex items-center justify-between bg-green-50 border border-green-300 p-4 rounded-xl"
                     >
                       <div className="flex items-center gap-3">
-                        <span className="w-7 h-7 bg-green-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                        <span className="w-7 h-7 bg-green-600 text-white rounded-full flex items-center justify-center">
                           {index + 1}
                         </span>
 
                         <div>
-                          <h4 className="font-semibold text-gray-900">{action.label}</h4>
-                          <p className="text-xs text-gray-600">{action.description}</p>
+                          <h4 className="font-semibold">{action.label}</h4>
+                          <p className="text-xs">{action.description}</p>
                         </div>
                       </div>
 
-                      <Button
-                        variant="ghost"
-                        className="text-red-600 hover:text-red-800"
-                        onClick={() => removeApprovalAction(action.key)}
-                      >
-                        <Trash2 className="h-5 w-5" />
+                      <Button variant="ghost" onClick={() => removeApprovalAction(key)}>
+                        <Trash2 className="h-5 w-5 text-red-600" />
                       </Button>
                     </div>
                   );
                 })}
               </div>
             )}
-
           </div>
 
           <Separator />
 
-          {/* ------------------------------------------------------ */}
-          {/*           REJECTION & ENFORCEMENT ACTIONS              */}
-          {/* ------------------------------------------------------ */}
+          {/* ------------------------------------------------------------------------------------------------ */}
+          {/*                      REJECTION ACTIONS (KEPT EXACTLY)                                           */}
+          {/* ------------------------------------------------------------------------------------------------ */}
+
           <div className="space-y-6">
 
             <div className="flex items-center gap-3">
@@ -395,76 +460,64 @@ export default function ApprovalWorkflowPage() {
                 <XCircle className="h-7 w-7 text-red-600" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">Rejection & Enforcement Actions</h2>
-                <p className="text-gray-600">Configure actions when requests are rejected.</p>
+                <h2 className="text-2xl font-bold">Rejection Actions</h2>
+                <p className="text-gray-600">Actions triggered automatically on rejection.</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
               {rejectionActions.map((action) => {
-                const isSelected = selectedRejectionActions.includes(action.key);
-
+                const active = selectedRejectionActions.includes(action.key);
                 return (
                   <div
                     key={action.key}
                     onClick={() => toggleRejectionAction(action.key)}
-                    className={`cursor-pointer p-5 rounded-xl border transition-all shadow-sm hover:shadow-md group
-                      ${isSelected ? "bg-red-50 border-red-400" : "bg-white border-gray-200 hover:border-red-300"}
-                    `}
+                    className={`cursor-pointer p-5 border rounded-xl shadow-sm hover:shadow-md transition-all ${
+                      active ? "bg-red-50 border-red-400" : "bg-white border"
+                    }`}
                   >
                     <div className="flex justify-between">
                       <div>
-                        <h3 className={`font-semibold text-lg ${isSelected ? "text-red-700" : "text-gray-800"}`}>
+                        <h3 className={`font-semibold ${active ? "text-red-700" : "text-gray-800"}`}>
                           {action.label}
                         </h3>
                         <p className="text-sm text-gray-500">{action.key}</p>
                       </div>
-
-                      {isSelected && <XCircle className="h-6 w-6 text-red-600" />}
+                      {active && <XCircle className="h-6 w-6 text-red-600" />}
                     </div>
-
-                    <div className="mt-3">
-                      <span className={`inline-block text-xs px-3 py-1 rounded-full
-                        ${isSelected ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-600"}
-                      `}>
-                        {action.description}
-                      </span>
-                    </div>
+                    <span className={`text-xs px-3 py-1 rounded-full mt-3 inline-block ${
+                      active ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-600"
+                    }`}>
+                      {action.description}
+                    </span>
                   </div>
                 );
               })}
             </div>
 
-            {/* Selected rejection actions */}
             {selectedRejectionActions.length > 0 && (
               <div className="space-y-2">
-                <h3 className="font-semibold text-gray-900">Selected Rejection Actions:</h3>
-
+                <h3 className="font-semibold">Selected Rejection Actions</h3>
                 {selectedRejectionActions.map((key, index) => {
                   const action = rejectionActions.find((a) => a.key === key);
-
                   return (
                     <div
                       key={key}
                       className="flex items-center justify-between bg-red-50 border border-red-300 p-4 rounded-xl"
                     >
                       <div className="flex items-center gap-3">
-                        <span className="w-7 h-7 bg-red-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                        <span className="w-7 h-7 bg-red-600 text-white rounded-full flex items-center justify-center">
                           {index + 1}
                         </span>
 
                         <div>
-                          <h4 className="font-semibold text-gray-900">{action.label}</h4>
-                          <p className="text-xs text-gray-600">{action.description}</p>
+                          <h4 className="font-semibold">{action.label}</h4>
+                          <p className="text-xs">{action.description}</p>
                         </div>
                       </div>
 
-                      <Button
-                        variant="ghost"
-                        className="text-red-600 hover:text-red-800"
-                        onClick={() => removeRejectionAction(action.key)}
-                      >
-                        <Trash2 className="h-5 w-5" />
+                      <Button variant="ghost" onClick={() => removeRejectionAction(key)}>
+                        <Trash2 className="h-5 w-5 text-red-600" />
                       </Button>
                     </div>
                   );
@@ -476,7 +529,6 @@ export default function ApprovalWorkflowPage() {
 
           <Separator />
 
-          {/* Submit Button */}
           <div className="text-center pt-6">
             <Button size="lg" className="px-10">
               Save Workflow

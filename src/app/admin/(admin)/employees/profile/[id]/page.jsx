@@ -1,5 +1,6 @@
+"use client";
 import React, { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "next/navigation";
 
 import {
   Card,
