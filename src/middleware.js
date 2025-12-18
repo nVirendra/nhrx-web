@@ -46,7 +46,7 @@ export function middleware(req) {
     console.log("Authorization Header:", authHeader);
 
     if (!authHeader) {
-      //return NextResponse.redirect(new URL("/auth/login", req.url));
+      //return NextResponse.redirect(new URL("/auth/login", req.url));  
     }
 
     return NextResponse.next();
