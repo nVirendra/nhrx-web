@@ -1,8 +1,10 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { useState, useEffect } from "react"
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useState, useRef, useEffect } from "react";
+
+
 import {
   LayoutDashboard,
   Users,
@@ -13,33 +15,55 @@ import {
   ChevronDown,
   UserCircle,
   Plane,
-  Wallet2,CheckCircle 
+  Wallet2,
+  CheckCircle,
+  LogOut,
 } from "lucide-react";
 
 const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "HrExtreme";
 
+export default function Sidebar() {
+  const pathname = usePathname();
+  const router = useRouter();
 
-const Sidebar = () => {
-  const pathname = usePathname()
-  const [expandedMenus, setExpandedMenus] = useState({})
-  const [activePopup, setActivePopup] = useState(null)
-  const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0 })
+
+  const [expandedMenus, setExpandedMenus] = useState({});
+  const [openUserMenu, setOpenUserMenu] = useState(false);
+
+  const userMenuRef = useRef(null);
+
+  // Close menu on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
+        setOpenUserMenu(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const toggleMenu = (key) => {
-    setExpandedMenus((prev) => ({ ...prev, [key]: !prev[key] }))
-  }
+    setExpandedMenus((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
 
-  const isActive = (path) => pathname === path
+  const isActive = (path) => pathname === path;
 
-  // SAME menuItems (unchanged)
+  const logout = () => {
+    console.log("Logout clicked");
+    localStorage.removeItem("access_token");
+
+    router.replace("/auth/login");
+  };
+
   const menuItems = [
-    {
-      icon: LayoutDashboard,
-      label: "Dashboard",
-      path: "/",
-    },
+    { icon: LayoutDashboard, label: "Dashboard", path: "/" },
 
-    // EMPLOYEES
     {
       icon: Users,
       label: "Employees",
@@ -53,7 +77,6 @@ const Sidebar = () => {
       ],
     },
 
-    // ATTENDANCE
     {
       icon: Clock,
       label: "Attendance",
@@ -66,7 +89,6 @@ const Sidebar = () => {
       ],
     },
 
-    // LEAVES
     {
       icon: CalendarDays,
       label: "Leaves",
@@ -80,7 +102,6 @@ const Sidebar = () => {
       ],
     },
 
-    // PAYROLL
     {
       icon: Wallet,
       label: "Payroll",
@@ -94,43 +115,6 @@ const Sidebar = () => {
       ],
     },
 
-    // RECRUITMENT
-    // {
-    //   icon: Briefcase,
-    //   label: "Recruitment",
-    //   path: "/recruitment",
-    //   children: [
-    //     { label: "Job Openings", path: "/recruitment/jobs" },
-    //     { label: "Candidates", path: "/recruitment/candidates" },
-    //     { label: "Interview Rounds", path: "/recruitment/interviews" },
-    //     { label: "Hiring Decisions", path: "/recruitment/decisions" },
-    //   ],
-    // },
-
-    // PERFORMANCE
-    // {
-    //   icon: Star,
-    //   label: "Performance",
-    //   path: "/performance",
-    //   children: [
-    //     { label: "Appraisals", path: "/performance/appraisals" },
-    //     { label: "Goals", path: "/performance/goals" },
-    //     { label: "Feedback", path: "/performance/feedback" },
-    //   ],
-    // },
-
-    // ONBOARDING
-    // {
-    //   icon: NotebookPen,
-    //   label: "Onboarding",
-    //   path: "/onboarding",
-    //   children: [
-    //     { label: "Onboarding Tasks", path: "/onboarding/tasks" },
-    //     { label: "Documents", path: "/onboarding/documents" },
-    //   ],
-    // },
-
-    // TRAVEL MANAGEMENT
     {
       icon: Plane,
       label: "Travel",
@@ -141,7 +125,6 @@ const Sidebar = () => {
       ],
     },
 
-    // EXPENSES
     {
       icon: Wallet2,
       label: "Expenses",
@@ -152,44 +135,6 @@ const Sidebar = () => {
       ],
     },
 
-    // COMPLIANCE
-    // {
-    //   icon: FileCheck,
-    //   label: "Compliance",
-    //   path: "/compliance",
-    //   children: [
-    //     { label: "PF / ESIC Reports", path: "/compliance/pf-esic" },
-    //     { label: "Statutory Forms", path: "/compliance/forms" },
-    //   ],
-    // },
-
-    // COMPANY SETTINGS
-    // {
-    //   icon: Building2,
-    //   label: "Company",
-    //   path: "/company",
-    //   children: [
-    //     { label: "Company Profile", path: "/company/profile" },
-    //     { label: "HR Policies", path: "/company/policies" },
-    //   ],
-    // },
-
-    // USER MANAGEMENT
-
-    //  {
-    //   icon: Wallet,
-    //   label: "Payroll",
-    //   path: "/payroll",
-    //   children: [
-    //     { label: "Salary Structure", path: "/admin/payroll/salary-structure" },
-    //     { label: "Payslips", path: "/admin/payroll/payslips" },
-    //     { label: "Deductions", path: "/admin/payroll/deductions" },
-    //     { label: "Overtime", path: "/admin/payroll/overtime" },
-    //     { label: "Reimbursements", path: "/admin/payroll/reimbursements" },
-    //   ],
-    // },
-
-    //http://localhost:3000/admin/role-permissions/roles
     {
       icon: UserCircle,
       label: "Roles & Permissions",
@@ -200,30 +145,8 @@ const Sidebar = () => {
       ],
     },
 
-    // CHAT / MESSAGING
-    // {
-    //   icon: MessageSquare,
-    //   label: "Messaging",
-    //   path: "/messages",
-    // },
-
-    // ANALYTICS
-    // {
-    //   icon: BarChart3,
-    //   label: "Analytics",
-    //   path: "/analytics",
-    // },
-
-    // SECURITY
-    // {
-    //   icon: Shield,
-    //   label: "Security",
-    //   path: "/security",
-    // },
-
-
     {
-      icon: CheckCircle ,
+      icon: CheckCircle,
       label: "Approvals",
       path: "/approvals/workflows",
       children: [
@@ -231,7 +154,6 @@ const Sidebar = () => {
       ],
     },
 
-    // SETTINGS
     {
       icon: Settings,
       label: "Settings",
@@ -244,9 +166,9 @@ const Sidebar = () => {
   ];
 
   return (
-    <aside className="w-64 md:w-20 lg:w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
-      
-      {/* Logo */}
+    <aside className="w-64 md:w-20 lg:w-64 bg-sidebar border-r border-sidebar-border flex flex-col relative">
+
+      {/* LOGO */}
       <div className="p-6 border-b border-sidebar-border">
         <div className="flex items-center gap-3 md:justify-center lg:justify-start">
           <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center font-bold">
@@ -259,42 +181,28 @@ const Sidebar = () => {
         </div>
       </div>
 
-      {/* Profile */}
-      <div className="p-4 border-b border-sidebar-border">
-        <div className="flex items-center gap-3 p-3 rounded-xl bg-sidebar-accent/40">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-            <UserCircle className="w-6 h-6 text-primary" />
-          </div>
-          <div>
-            <p className="text-sm font-medium">HR Admin</p>
-            <p className="text-xs text-muted-foreground">admin@hrms.com</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Menu */}
+      {/* MENU */}
       <nav className="flex-1 overflow-y-auto p-4 space-y-1">
         {menuItems.map((item) => {
-          const Icon = item.icon
-          const active = pathname.startsWith(item.path)
+          const Icon = item.icon;
+          const active = pathname.startsWith(item.path);
 
           return (
             <div key={item.path}>
               <button
                 onClick={() => item.children && toggleMenu(item.path)}
-                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl ${
-                  active ? "bg-sidebar-accent" : "hover:bg-sidebar-accent/50"
-                }`}
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl ${active ? "bg-sidebar-accent" : "hover:bg-sidebar-accent/50"
+                  }`}
               >
                 <div className="flex items-center gap-3">
                   <Icon className="w-5 h-5" />
-                  <span className="text-sm">{item.label}</span>
+                  <span className="text-sm md:hidden lg:block">{item.label}</span>
                 </div>
+
                 {item.children && (
                   <ChevronDown
-                    className={`w-4 h-4 transition ${
-                      expandedMenus[item.path] ? "rotate-180" : ""
-                    }`}
+                    className={`w-4 h-4 transition ${expandedMenus[item.path] ? "rotate-180" : ""
+                      }`}
                   />
                 )}
               </button>
@@ -305,11 +213,10 @@ const Sidebar = () => {
                     <Link
                       key={child.path}
                       href={child.path}
-                      className={`block px-4 py-2 rounded-lg text-sm ${
-                        isActive(child.path)
-                          ? "bg-sidebar-accent font-medium"
-                          : "hover:bg-sidebar-accent/30"
-                      }`}
+                      className={`block px-4 py-2 rounded-lg text-sm ${isActive(child.path)
+                        ? "bg-sidebar-accent font-medium"
+                        : "hover:bg-sidebar-accent/30"
+                        }`}
                     >
                       {child.label}
                     </Link>
@@ -317,11 +224,60 @@ const Sidebar = () => {
                 </div>
               )}
             </div>
-          )
+          );
         })}
       </nav>
-    </aside>
-  )
-}
 
-export default Sidebar
+      {/* BOTTOM USER MENU */}
+      <div className="border-t border-sidebar-border p-4 relative" ref={userMenuRef}>
+        <button
+          onClick={() => setOpenUserMenu((prev) => !prev)}
+          className="w-full flex items-center gap-3 p-3 rounded-xl bg-sidebar-accent/40 hover:bg-sidebar-accent transition"
+        >
+          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+            <UserCircle className="w-6 h-6 text-primary" />
+          </div>
+
+          <div className="md:hidden lg:block text-left">
+            <p className="text-sm font-medium">HR Admin</p>
+            <p className="text-xs text-muted-foreground">admin@hrms.com</p>
+          </div>
+        </button>
+
+        {openUserMenu && (
+          <div className="absolute bottom-16 left-4 right-4 bg-sidebar-accent border border-sidebar-border rounded-xl shadow-xl p-2 z-50">
+
+            <Link
+              href="/profile"
+              className="block px-3 py-2 rounded-lg text-sm hover:bg-sidebar-accent/60"
+            >
+              Profile
+            </Link>
+
+            <Link
+              href="/admin/settings/system"
+              className="block px-3 py-2 rounded-lg text-sm hover:bg-sidebar-accent/60"
+            >
+              Settings
+            </Link>
+
+            <Link
+              href="/modules"
+              className="block px-3 py-2 rounded-lg text-sm hover:bg-sidebar-accent/60"
+            >
+              Modules / Center Tab
+            </Link>
+
+            <button
+              onClick={logout}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-red-500/30 text-red-500"
+            >
+              <LogOut className="w-4 h-4" />
+              Logout
+            </button>
+          </div>
+        )}
+      </div>
+    </aside>
+  );
+}

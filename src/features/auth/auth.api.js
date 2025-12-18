@@ -1,6 +1,53 @@
 import api from "@/shared/api/axios";
 import { useMutation, useQuery  } from "@tanstack/react-query";
 
+export const useSendOrgOtp = () => {
+  return useMutation({
+    mutationFn: async ({ email }) => {
+      const res = await api.post("/api/v1/organization/send-admin-otp", {
+        email,
+      });
+      return res.data;
+    },
+  });
+};
+
+export const useVerifyOrgOtp = () => {
+  return useMutation({
+    mutationFn: async ({ email, otp }) => {
+      const res = await api.post("/api/v1/organization/verify-admin-otp", {
+        email,
+        otp,
+      });
+      return res.data;
+    },
+  });
+};
+
+export const useRegisterOrganization = () => {
+  return useMutation({
+    mutationFn: async (payload) => {
+      const formData = new FormData();
+
+      Object.entries(payload).forEach(([key, value]) => {
+        formData.append(key, value);
+      });
+
+      const res = await api.post(
+        "/api/v1/organization/register",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      return res.data;
+    },
+  });
+};
+
 export const useLogin = () => {
   return useMutation({
     mutationFn: async (payload) => {
