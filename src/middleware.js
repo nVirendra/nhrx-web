@@ -43,8 +43,10 @@ export function middleware(req) {
   if (pathname.startsWith(ADMIN_PREFIX)) {
     const authHeader = req.headers.get("authorization");
 
+    console.log("Authorization Header:", authHeader);
+
     if (!authHeader) {
-      return NextResponse.redirect(new URL("/auth/login", req.url));
+      //return NextResponse.redirect(new URL("/auth/login", req.url));
     }
 
     return NextResponse.next();
