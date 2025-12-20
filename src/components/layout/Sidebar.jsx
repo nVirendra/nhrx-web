@@ -115,25 +115,25 @@ export default function Sidebar() {
       ],
     },
 
-    {
-      icon: Plane,
-      label: "Travel",
-      path: "/travel",
-      children: [
-        { label: "Travel Requests", path: "/admin/travel/requests" },
-        { label: "Daily Allowance", path: "/admin/travel/da" },
-      ],
-    },
+    // {
+    //   icon: Plane,
+    //   label: "Travel",
+    //   path: "/travel",
+    //   children: [
+    //     { label: "Travel Requests", path: "/admin/travel/requests" },
+    //     { label: "Daily Allowance", path: "/admin/travel/da" },
+    //   ],
+    // },
 
-    {
-      icon: Wallet2,
-      label: "Expenses",
-      path: "/expenses",
-      children: [
-        { label: "Expense Claims", path: "/admin/expenses/claims" },
-        { label: "Approvals", path: "/admin/expenses/approvals" },
-      ],
-    },
+    // {
+    //   icon: Wallet2,
+    //   label: "Expenses",
+    //   path: "/expenses",
+    //   children: [
+    //     { label: "Expense Claims", path: "/admin/expenses/claims" },
+    //     { label: "Approvals", path: "/admin/expenses/approvals" },
+    //   ],
+    // },
 
     {
       icon: UserCircle,
