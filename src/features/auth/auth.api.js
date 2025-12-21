@@ -4,7 +4,7 @@ import { useMutation, useQuery  } from "@tanstack/react-query";
 export const useSendOrgOtp = () => {
   return useMutation({
     mutationFn: async ({ email }) => {
-      const res = await api.post("/api/v1/organization/send-admin-otp", {
+      const res = await api.post("/api/v1/business/send-admin-otp", {
         email,
       });
       return res.data;
@@ -15,7 +15,7 @@ export const useSendOrgOtp = () => {
 export const useVerifyOrgOtp = () => {
   return useMutation({
     mutationFn: async ({ email, otp }) => {
-      const res = await api.post("/api/v1/organization/verify-admin-otp", {
+      const res = await api.post("/api/v1/business/verify-admin-otp", {
         email,
         otp,
       });
@@ -34,7 +34,7 @@ export const useRegisterOrganization = () => {
       });
 
       const res = await api.post(
-        "/api/v1/organization/register",
+        "/api/v1/business/register",
         formData,
         {
           headers: {

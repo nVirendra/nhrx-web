@@ -1,22 +1,37 @@
 "use client";
-
 import { useState } from "react";
-import { Mail, MapPin } from "lucide-react";
-import {
-  useSendOrgOtp,
-  useVerifyOrgOtp,
-  useRegisterOrganization,
-} from "@/features/auth/auth.api";
 
-export default function OrganizationRegister() {
-  const [step, setStep] = useState(1);
+// ---------- API HOOKS ----------
+import {
+  useSendOrgOtp, useVerifyOrgOtp,
+  useRegisterOrganization
+} from "@/features/auth/auth.api";
+import { useRouter } from "next/navigation";
+
+
+// ---------- SHADCN UI ----------
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+
+// ---------- ICONS ----------
+import { Mail, Loader2, MapPin, Image } from "lucide-react";
+
+export default function Signup() {
+
+  const router = useRouter();
+
+  const [step, setStep] = useState("email"); // email → otp → business
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
 
   const [form, setForm] = useState({
     companyName: "",
-    contactNumber: "",
     about: "",
+    phone: "",
     address: "",
     city: "",
     state: "",
@@ -24,239 +39,276 @@ export default function OrganizationRegister() {
     logo: null,
   });
 
-  // API Hooks
+  // ------------- API HOOKS -------------
   const sendOtpMutation = useSendOrgOtp();
   const verifyOtpMutation = useVerifyOrgOtp();
-  const registerMutation = useRegisterOrganization();
+  const registerOrgMutation = useRegisterOrganization();
 
-  // STEP 1 — SEND OTP
-  const sendOtp = () => {
-    if (!email) return alert("Enter email");
-
-    sendOtpMutation.mutate(
+  // ---------------- SEND OTP ----------------
+  const handleSendOtp = async () => {
+    await sendOtpMutation.mutateAsync(
       { email },
       {
-        onSuccess: () => setStep(2),
-        onError: (err) =>
-          alert(err?.response?.data?.message || "Failed to send OTP"),
+        onSuccess: () => {
+          setStep("otp");
+        },
+        onError: (err) => {
+          alert(err?.response?.data?.message || "Failed to send OTP");
+        },
       }
     );
   };
 
-  // STEP 2 — VERIFY OTP
-  const verifyOtp = () => {
-    if (!otp) return alert("Enter OTP");
-
-    verifyOtpMutation.mutate(
+  // ---------------- VERIFY OTP ----------------
+  const handleVerifyOtp = async () => {
+    await verifyOtpMutation.mutateAsync(
       { email, otp },
       {
-        onSuccess: () => setStep(3),
-        onError: (err) =>
-          alert(err?.response?.data?.message || "Invalid OTP"),
+        onSuccess: () => {
+          setStep("business");
+        },
+        onError: (err) => {
+          alert(err?.response?.data?.message || "Invalid OTP");
+        },
       }
     );
   };
 
-  // STEP 3 — REGISTER ORGANIZATION
-  const registerOrg = () => {
-    registerMutation.mutate(
-      {
-        email,
-        ...form,
+  // ---------------- REGISTER BUSINESS ----------------
+  const handleSubmit = async () => {
+    const payload = {
+      email,
+      ...form,
+    };
+
+    await registerOrgMutation.mutateAsync(payload, {
+      onSuccess: () => {
+        alert("Business Registered Successfully 🎉");
+        router.push("/auth/login");
       },
-      {
-        onSuccess: () => {
-          alert("Organization Registered Successfully 🎉");
-          window.location.href = "/auth/login";
-        },
-        onError: (err) =>
-          alert(err?.response?.data?.message || "Registration Failed"),
-      }
-    );
+      onError: (err) => {
+        alert(err?.response?.data?.message || "Registration Failed");
+      },
+    });
+  };
+
+  // ---------------- FORM CHANGE ----------------
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm({ ...form, [name]: value });
   };
 
   return (
-    <div className="min-h-screen bg-[#EEF2FF] flex items-center justify-center p-6">
-      <div className="bg-white shadow-2xl rounded-3xl p-8 w-full max-w-2xl">
+    <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-indigo-50 to-indigo-100">
 
-        {/* STEP 1 */}
-        {step === 1 && (
-          <>
-            <h1 className="text-2xl font-bold text-center mb-2">
+      {/* -------------------------------- EMAIL SCREEN -------------------------------- */}
+      {step === "email" && (
+        <Card className="w-full max-w-lg shadow-xl border-none bg-white/80 backdrop-blur-xl">
+          <CardHeader>
+            <CardTitle className="text-2xl text-center font-bold">
               Register Your Organization
-            </h1>
+            </CardTitle>
+          </CardHeader>
 
-            <label>Email Address (Business Admin)</label>
-
-            <div className="mt-2 flex items-center border border-purple-400 rounded-xl px-3">
-              <Mail className="text-purple-500 w-5 h-5" />
-              <input
+          <CardContent className="space-y-6">
+            <Label>Email Address (Business Admin)</Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-3 h-5 text-gray-400" />
+              <Input
                 type="email"
                 placeholder="admin@company.com"
-                className="w-full px-3 py-3 outline-none"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                className="pl-10 h-12"
               />
             </div>
 
-            <button
-              onClick={sendOtp}
-              disabled={sendOtpMutation.isPending}
-              className="w-full mt-6 py-3 bg-purple-400 rounded-xl text-white font-semibold"
+            <Button
+              className="w-full h-12"
+              disabled={!email || sendOtpMutation.isPending}
+              onClick={handleSendOtp}
             >
-              {sendOtpMutation.isPending
-                ? "Sending..."
-                : "Send Verification OTP"}
-            </button>
-          </>
-        )}
+              {sendOtpMutation.isPending ? (
+                <Loader2 className="animate-spin" />
+              ) : (
+                "Send Verification OTP"
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
-        {/* STEP 2 */}
-        {step === 2 && (
-          <>
-            <h1 className="text-2xl font-bold text-center mb-2">
-              Register Your Organization
-            </h1>
+      {/* -------------------------------- OTP SCREEN -------------------------------- */}
+      {step === "otp" && (
+        <Card className="w-full max-w-lg shadow-xl border-none bg-white/80 backdrop-blur-xl">
+          <CardHeader>
+            <CardTitle className="text-2xl text-center font-bold">
+              Verify Email
+            </CardTitle>
+          </CardHeader>
 
-            <p className="text-center text-gray-600 mb-4">
+          <CardContent className="space-y-6">
+            <p className="text-center text-gray-700 text-sm">
               An OTP has been sent to <b>{email}</b>
             </p>
 
-            <label>Enter OTP</label>
-
-            <input
-              type="text"
-              maxLength="6"
+            <Label>Enter OTP</Label>
+            <Input
               placeholder="Enter 6-digit OTP"
-              className="w-full mt-2 px-4 py-3 border rounded-xl outline-none"
+              className="h-12 text-center tracking-[0.3em] text-lg"
+              maxLength={6}
               value={otp}
               onChange={(e) => setOtp(e.target.value)}
             />
 
-            <button
-              onClick={verifyOtp}
-              disabled={verifyOtpMutation.isPending}
-              className="w-full mt-6 py-3 bg-purple-400 rounded-xl text-white font-semibold"
+            <Button
+              className="w-full h-12"
+              disabled={otp.length < 6 || verifyOtpMutation.isPending}
+              onClick={handleVerifyOtp}
             >
-              {verifyOtpMutation.isPending
-                ? "Verifying..."
-                : "Verify Email"}
-            </button>
+              {verifyOtpMutation.isPending ? (
+                <Loader2 className="animate-spin" />
+              ) : (
+                "Verify Email"
+              )}
+            </Button>
 
-            <hr className="my-4" />
+            <Separator />
 
             <button
-              onClick={() => setStep(1)}
-              className="w-full text-blue-600"
+              className="text-sm text-indigo-600 w-full text-center hover:underline"
+              onClick={() => setStep("email")}
             >
               Change Email
             </button>
-          </>
-        )}
+          </CardContent>
+        </Card>
+      )}
 
-        {/* STEP 3 */}
-        {step === 3 && (
-          <>
-            <h1 className="text-2xl font-bold text-center">
+      {/* -------------------------------- BUSINESS FORM -------------------------------- */}
+      {step === "business" && (
+        <Card className="w-full max-w-2xl shadow-xl border-none bg-white/80 backdrop-blur-xl">
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold text-center">
               Business Information
-            </h1>
-
-            <p className="text-center text-gray-600 mb-6">
+            </CardTitle>
+            <p className="text-center text-gray-600 text-sm">
               Admin Email Verified: <b>{email}</b>
             </p>
+          </CardHeader>
 
-            <div className="grid grid-cols-2 gap-4">
-              <input
-                placeholder="Company Name"
-                className="border p-3 rounded-xl"
-                value={form.companyName}
-                onChange={(e) =>
-                  setForm({ ...form, companyName: e.target.value })
-                }
-              />
+          <CardContent className="space-y-6">
 
-              <input
-                placeholder="Contact Number"
-                className="border p-3 rounded-xl"
-                value={form.contactNumber}
-                onChange={(e) =>
-                  setForm({ ...form, contactNumber: e.target.value })
-                }
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label>Company Name</Label>
+                <Input
+                  name="companyName"
+                  placeholder="Ex: TechVision Pvt Ltd"
+                  value={form.companyName}
+                  onChange={handleChange}
+                  className="h-12"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Contact Number</Label>
+                <Input
+                  name="phone"
+                  placeholder="+91 9876543210"
+                  value={form.phone}
+                  onChange={handleChange}
+                  className="h-12"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>About Company</Label>
+              <Textarea
+                name="about"
+                placeholder="Short description about your business..."
+                value={form.about}
+                onChange={handleChange}
+                rows={3}
               />
             </div>
 
-            <textarea
-              placeholder="About your company..."
-              className="border p-3 rounded-xl w-full mt-3"
-              rows={3}
-              value={form.about}
-              onChange={(e) =>
-                setForm({ ...form, about: e.target.value })
-              }
-            />
-
-            <h3 className="mt-6 font-semibold flex items-center gap-2">
-              <MapPin className="text-purple-500" /> Address Details
+            <Separator />
+            <h3 className="font-semibold text-lg flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-indigo-600" /> Address Details
             </h3>
 
-            <div className="grid grid-cols-2 gap-4 mt-2">
-              <input
-                placeholder="Address"
-                className="border p-3 rounded-xl"
-                value={form.address}
-                onChange={(e) =>
-                  setForm({ ...form, address: e.target.value })
-                }
-              />
-              <input
-                placeholder="City"
-                className="border p-3 rounded-xl"
-                value={form.city}
-                onChange={(e) =>
-                  setForm({ ...form, city: e.target.value })
-                }
-              />
-              <input
-                placeholder="State"
-                className="border p-3 rounded-xl"
-                value={form.state}
-                onChange={(e) =>
-                  setForm({ ...form, state: e.target.value })
-                }
-              />
-              <input
-                placeholder="ZIP Code"
-                className="border p-3 rounded-xl"
-                value={form.zip}
-                onChange={(e) =>
-                  setForm({ ...form, zip: e.target.value })
-                }
-              />
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label>Address</Label>
+                <Input
+                  name="address"
+                  placeholder="Street / Building"
+                  value={form.address}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>City</Label>
+                <Input
+                  name="city"
+                  placeholder="City"
+                  value={form.city}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>State</Label>
+                <Input
+                  name="state"
+                  placeholder="State"
+                  value={form.state}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>ZIP / Postal Code</Label>
+                <Input
+                  name="zip"
+                  placeholder="ZIP Code"
+                  value={form.zip}
+                  onChange={handleChange}
+                />
+              </div>
             </div>
 
-            <div className="mt-4">
-              <p>Company Logo (Optional)</p>
-              <input
-                type="file"
-                className="mt-2"
-                onChange={(e) =>
-                  setForm({ ...form, logo: e.target.files[0] })
-                }
-              />
+            <div className="space-y-2">
+              <Label>Company Logo (Optional)</Label>
+              <div className="border rounded-lg p-3 flex items-center gap-4">
+                <Image className="w-8 h-8 text-gray-400" />
+                <Input
+                  type="file"
+                  accept=".png,.jpg,.jpeg"
+                  onChange={(e) =>
+                    setForm({ ...form, logo: e.target.files[0] })
+                  }
+                />
+              </div>
             </div>
 
-            <button
-              onClick={registerOrg}
-              disabled={registerMutation.isPending}
-              className="w-full mt-6 py-3 bg-purple-600 text-white rounded-xl font-semibold"
+            <Button
+              className="w-full h-12 text-base font-semibold"
+              disabled={registerOrgMutation.isPending}
+              onClick={handleSubmit}
             >
-              {registerMutation.isPending
-                ? "Registering..."
-                : "Complete Registration"}
-            </button>
-          </>
-        )}
-      </div>
+              {registerOrgMutation.isPending ? (
+                <Loader2 className="animate-spin" />
+              ) : (
+                "Complete Registration"
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
