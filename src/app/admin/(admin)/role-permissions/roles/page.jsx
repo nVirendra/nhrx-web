@@ -1,6 +1,13 @@
-"use client"
+"use client";
 
 import React, { useState } from "react";
+
+import {
+  useGetRoles,
+  useCreateRole,
+  useUpdateRole,
+  useDeleteRole,
+} from "@/features/role/role.api";
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,46 +33,56 @@ import {
 
 import { Pencil, Trash2, ShieldPlus } from "lucide-react";
 
-// Dummy role list (replace with API later)
-const INITIAL_ROLES = [
-  { id: 1, name: "Admin" },
-  { id: 2, name: "HR Manager" },
-  { id: 3, name: "Employee" },
-];
-
 const Roles = () => {
-  const [roles, setRoles] = useState(INITIAL_ROLES);
+  const { data: roles = [], isLoading } = useGetRoles();
+  const createRole = useCreateRole();
+  const updateRole = useUpdateRole();
+  const deleteRole = useDeleteRole();
+
   const [isEdit, setIsEdit] = useState(false);
 
   const [form, setForm] = useState({
     id: null,
-    name: "",
+    roleName: "",
+    description: "",
   });
 
   const resetForm = () => {
-    setForm({ id: null, name: "" });
+    setForm({ id: null, roleName: "", description: "" });
     setIsEdit(false);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (!form.roleName) return;
+
     if (isEdit) {
-      setRoles((prev) =>
-        prev.map((r) => (r.id === form.id ? form : r))
-      );
+      await updateRole.mutateAsync({
+        id: form.id,
+        payload: {
+          roleName: form.roleName,
+          description: form.description,
+        },
+      });
     } else {
-      setRoles((prev) => [...prev, { ...form, id: Date.now() }]);
+      await createRole.mutateAsync({
+        roleName: form.roleName,
+        description: form.description,
+      });
     }
+
+    resetForm();
   };
 
-  const handleDelete = (id) => {
-    setRoles((prev) => prev.filter((r) => r.id !== id));
+  const handleDelete = async (id) => {
+    if (!confirm("Are you sure you want to delete this role?")) return;
+    await deleteRole.mutateAsync(id);
   };
 
   return (
     <div className="p-6 space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Role Management (CRUD)</h1>
+        <h1 className="text-2xl font-bold">Role Management</h1>
 
         <Dialog onOpenChange={(open) => !open && resetForm()}>
           <DialogTrigger asChild>
@@ -84,13 +101,28 @@ const Roles = () => {
               <div>
                 <Label>Role Name</Label>
                 <Input
-                  placeholder="Enter role name"
-                  value={form.name}
-                  onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                  value={form.roleName}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, roleName: e.target.value }))
+                  }
                 />
               </div>
 
-              <Button className="w-full" onClick={handleSubmit}>
+              <div>
+                <Label>Description</Label>
+                <Input
+                  value={form.description}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, description: e.target.value }))
+                  }
+                />
+              </div>
+
+              <Button
+                className="w-full"
+                onClick={handleSubmit}
+                disabled={createRole.isPending || updateRole.isPending}
+              >
                 {isEdit ? "Save Changes" : "Create Role"}
               </Button>
             </div>
@@ -98,73 +130,81 @@ const Roles = () => {
         </Dialog>
       </div>
 
-      {/* Role Table */}
+      {/* Table */}
       <Card>
         <CardHeader>
           <CardTitle>All Roles</CardTitle>
         </CardHeader>
 
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Role Name</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-
-            <TableBody>
-              {roles.map((role) => (
-                <TableRow key={role.id}>
-                  <TableCell className="font-medium">{role.name}</TableCell>
-
-                  <TableCell className="text-right flex justify-end gap-2">
-                    {/* Edit Role */}
-                    <Dialog onOpenChange={(open) => !open && resetForm()}>
-                      <DialogTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setForm(role);
-                            setIsEdit(true);
-                          }}
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                      </DialogTrigger>
-
-                      <DialogContent className="max-w-md">
-                        <DialogHeader>
-                          <DialogTitle>Edit Role</DialogTitle>
-                        </DialogHeader>
-
-                        <div className="space-y-4 mt-4">
-                          <Label>Role Name</Label>
-                          <Input
-                            value={form.name}
-                            onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-                          />
-
-                          <Button onClick={handleSubmit}>Save Changes</Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-
-                    {/* Delete */}
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDelete(role.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </TableCell>
+          {isLoading ? (
+            <p>Loading...</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Role Name</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
+              </TableHeader>
 
-          </Table>
+              <TableBody>
+                {roles.map((role) => (
+                  <TableRow key={role.id}>
+                    <TableCell>{role.roleName}</TableCell>
+                    <TableCell>{role.description || "-"}</TableCell>
+
+                    <TableCell className="text-right flex justify-end gap-2">
+                      <Dialog onOpenChange={(open) => !open && resetForm()}>
+                        <DialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setForm(role);
+                              setIsEdit(true);
+                            }}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                        </DialogTrigger>
+
+                        <DialogContent className="max-w-md">
+                          <DialogHeader>
+                            <DialogTitle>Edit Role</DialogTitle>
+                          </DialogHeader>
+
+                          <div className="space-y-4 mt-4">
+                            <Input
+                              value={form.roleName}
+                              onChange={(e) =>
+                                setForm((p) => ({
+                                  ...p,
+                                  roleName: e.target.value,
+                                }))
+                              }
+                            />
+                            <Button onClick={handleSubmit}>
+                              Save Changes
+                            </Button>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDelete(role.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>
