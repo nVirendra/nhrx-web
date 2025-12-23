@@ -46,30 +46,7 @@ import {
   getRoleDetailsApi,
 } from "@/features/role/role-v2.api";
 
-// Same MENU_PERMISSIONS constant as before...
-const MENU_PERMISSIONS = [
-  {
-    menu: "Employees",
-    subMenus: [
-      { name: "Employee List", permissions: ["view", "create", "edit", "delete"] },
-      { name: "Employee Profile", permissions: ["view", "edit"] },
-    ],
-  },
-  {
-    menu: "Attendance",
-    subMenus: [
-      { name: "Attendance Logs", permissions: ["view", "modify"] },
-      { name: "Regularization", permissions: ["approve"] },
-    ],
-  },
-  {
-    menu: "Payroll",
-    subMenus: [
-      { name: "Salary Processing", permissions: ["view", "process"] },
-      { name: "Payslips", permissions: ["view"] },
-    ],
-  },
-];
+
 
 
 const PermissionTree = ({ menuTree = [], value, onChange }) => {
@@ -121,17 +98,9 @@ const PermissionTree = ({ menuTree = [], value, onChange }) => {
                     <div className="flex items-center gap-2">
                       <Checkbox
                         checked={allSelected}
-
-
                         onCheckedChange={(checked) =>
-                          handleSelectSubmenu(
-                            sub.id,
-                            sub.permissions,
-                            checked === true
-                          )
+                          handleSelectSubmenu(sub.id, sub.permissions, checked)
                         }
-
-
                       />
 
                       <span className="text-xs text-muted-foreground cursor-pointer">
@@ -168,12 +137,7 @@ const PermissionTree = ({ menuTree = [], value, onChange }) => {
 };
 
 
-const buildPermissionPayload = () => {
-  return form.permissions.map(k => {
-    const [menuId, permissionId] = k.split(":");
-    return { menuId: Number(menuId), permissionId: Number(permissionId) };
-  });
-};
+
 
 
 export default function RoleManagementPage() {
@@ -187,6 +151,14 @@ export default function RoleManagementPage() {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
+
+
+  const buildPermissionPayload = () => {
+  return form.permissions.map(k => {
+    const [menuId, permissionId] = k.split(":");
+    return { menuId: Number(menuId), permissionId: Number(permissionId) };
+  });
+};
 
   // Added 'description' to the form state
   const [form, setForm] = useState({
