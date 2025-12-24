@@ -46,30 +46,6 @@ import {
   getRoleDetailsApi,
 } from "@/features/role/role-v2.api";
 
-// Same MENU_PERMISSIONS constant as before...
-const MENU_PERMISSIONS = [
-  {
-    menu: "Employees",
-    subMenus: [
-      { name: "Employee List", permissions: ["view", "create", "edit", "delete"] },
-      { name: "Employee Profile", permissions: ["view", "edit"] },
-    ],
-  },
-  {
-    menu: "Attendance",
-    subMenus: [
-      { name: "Attendance Logs", permissions: ["view", "modify"] },
-      { name: "Regularization", permissions: ["approve"] },
-    ],
-  },
-  {
-    menu: "Payroll",
-    subMenus: [
-      { name: "Salary Processing", permissions: ["view", "process"] },
-      { name: "Payslips", permissions: ["view"] },
-    ],
-  },
-];
 
 
 const PermissionTree = ({ menuTree = [], value, onChange }) => {
@@ -168,12 +144,16 @@ const PermissionTree = ({ menuTree = [], value, onChange }) => {
 };
 
 
-const buildPermissionPayload = () => {
-  return form.permissions.map(k => {
+const buildPermissionPayload = (permissions = []) => {
+  return permissions.map(k => {
     const [menuId, permissionId] = k.split(":");
-    return { menuId: Number(menuId), permissionId: Number(permissionId) };
+    return {
+      menuId: Number(menuId),
+      permissionId: Number(permissionId),
+    };
   });
 };
+
 
 
 export default function RoleManagementPage() {
@@ -209,31 +189,35 @@ export default function RoleManagementPage() {
   };
 
   const handleSubmit = async () => {
-    if (!form.name) return;
+  if (!form.name) return;
 
-    const payload = {
-      name: form.name,
-      description: form.description,
-      permissions: buildPermissionPayload(),
-    };
-
-    if (isEdit) {
-      await updateRole.mutateAsync({ id: form.id, payload });
-    } else {
-      await createRole.mutateAsync(payload);
-    }
-
-    resetForm();
-    setOpen(false);
+  const payload = {
+    name: form.name,
+    description: form.description,
+    permissions: buildPermissionPayload(form.permissions),
   };
+
+  console.log("handleSubmit payload", payload);
+
+  if (isEdit) {
+    await updateRole.mutateAsync({ id: form.id, payload });
+  } else {
+    await createRole.mutateAsync(payload);
+  }
+
+  resetForm();
+  setOpen(false);
+};
+
 
 
   const handleEdit = async (id) => {
     const data = await getRoleDetailsApi(id);
 
+
     setForm({
       id: data.id,
-      name: data.roleName,
+      name: data.name,
       description: data.description,
       permissions: data.permissions?.map(
         (p) => `${p.menuId}:${p.permissionId}`
