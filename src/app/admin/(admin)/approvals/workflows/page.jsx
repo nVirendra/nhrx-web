@@ -47,6 +47,10 @@ export default function ApprovalWorkflowPage() {
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [selectedEmployee, setSelectedEmployee] = useState("");
 
+  // AUTO ESCALATION STATE
+  const [autoEscalation, setAutoEscalation] = useState(false);
+
+
   const departments = ["HR", "Finance", "Engineering", "IT", "Admin", "Sales"];
   const employees = [
     { id: "1", name: "Virendra Nishad" },
@@ -92,7 +96,7 @@ export default function ApprovalWorkflowPage() {
   const addStep = () => {
     setSteps((prev) => [
       ...prev,
-      { id: Date.now(), approver: "", authority: "" },
+      { id: Date.now(), approver: "", authority: "", escalateAfterHours: "" },
     ]);
   };
 
@@ -115,7 +119,7 @@ export default function ApprovalWorkflowPage() {
 
           {/* --- MODULE SELECTION (KEPT AS IS) --- */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
+
             <div>
               <label className="font-medium text-sm">Module</label>
               <Select>
@@ -152,7 +156,11 @@ export default function ApprovalWorkflowPage() {
                   Move to next level if not approved in time
                 </p>
               </div>
-              <Switch />
+              <Switch
+                checked={autoEscalation}
+                onCheckedChange={setAutoEscalation}
+              />
+
             </div>
           </div>
 
@@ -298,7 +306,7 @@ export default function ApprovalWorkflowPage() {
             <div className="space-y-6">
               {steps.map((step, idx) => (
                 <div key={step.id} className="p-5 rounded-xl border shadow-sm bg-white">
-                  
+
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <span className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center">
@@ -341,6 +349,33 @@ export default function ApprovalWorkflowPage() {
                         </SelectContent>
                       </Select>
                     </div>
+
+                    {autoEscalation && (
+                      <div>
+                        <label className="font-medium text-sm">
+                          Escalation Time (Hours)
+                        </label>
+                        <Input
+                          type="number"
+                          min={1}
+                          placeholder="e.g. 24"
+                          className="mt-1"
+                          value={step.escalateAfterHours || ""}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            setSteps((prev) =>
+                              prev.map((s) =>
+                                s.id === step.id
+                                  ? { ...s, escalateAfterHours: Number(value) }
+                                  : s
+                              )
+                            );
+                          }}
+                        />
+                      </div>
+                    )}
+
+
                   </div>
                 </div>
               ))}
@@ -393,9 +428,8 @@ export default function ApprovalWorkflowPage() {
                   <div
                     key={action.key}
                     onClick={() => toggleApprovalAction(action.key)}
-                    className={`cursor-pointer p-5 border rounded-xl shadow-sm hover:shadow-md transition-all ${
-                      active ? "bg-green-50 border-green-400" : "bg-white border"
-                    }`}
+                    className={`cursor-pointer p-5 border rounded-xl shadow-sm hover:shadow-md transition-all ${active ? "bg-green-50 border-green-400" : "bg-white border"
+                      }`}
                   >
                     <div className="flex justify-between">
                       <div>
@@ -406,9 +440,8 @@ export default function ApprovalWorkflowPage() {
                       </div>
                       {active && <CheckCircle className="h-6 w-6 text-green-600" />}
                     </div>
-                    <span className={`text-xs px-3 py-1 rounded-full mt-3 inline-block ${
-                      active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
-                    }`}>
+                    <span className={`text-xs px-3 py-1 rounded-full mt-3 inline-block ${active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
+                      }`}>
                       {action.description}
                     </span>
                   </div>
@@ -472,9 +505,8 @@ export default function ApprovalWorkflowPage() {
                   <div
                     key={action.key}
                     onClick={() => toggleRejectionAction(action.key)}
-                    className={`cursor-pointer p-5 border rounded-xl shadow-sm hover:shadow-md transition-all ${
-                      active ? "bg-red-50 border-red-400" : "bg-white border"
-                    }`}
+                    className={`cursor-pointer p-5 border rounded-xl shadow-sm hover:shadow-md transition-all ${active ? "bg-red-50 border-red-400" : "bg-white border"
+                      }`}
                   >
                     <div className="flex justify-between">
                       <div>
@@ -485,9 +517,8 @@ export default function ApprovalWorkflowPage() {
                       </div>
                       {active && <XCircle className="h-6 w-6 text-red-600" />}
                     </div>
-                    <span className={`text-xs px-3 py-1 rounded-full mt-3 inline-block ${
-                      active ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-600"
-                    }`}>
+                    <span className={`text-xs px-3 py-1 rounded-full mt-3 inline-block ${active ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-600"
+                      }`}>
                       {action.description}
                     </span>
                   </div>
