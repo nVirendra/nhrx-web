@@ -44,17 +44,13 @@ import { useMastersByCategory } from "@/features/masters/master.api";
 
 export default function ApprovalWorkflowPage() {
 
-  /* ---------------- MASTER DATA ---------------- */
-  const { data: modules = [] } = useMastersByCategory("MODULE");
-  const { data: priorities = [] } = useMastersByCategory("PRIORITY");
-  const { data: approvalTypes = [] } = useMastersByCategory("APPROVAL_TYPE");
-  const { data: flowModes = [] } = useMastersByCategory("FLOW_MODE");
-  const { data: scopes = [] } = useMastersByCategory("APPROVAL_SCOPE");
-
-  const { data: approvalActions = [] } = useMastersByCategory("APPROVAL_ACTION");
-const { data: rejectionActions = [] } = useMastersByCategory("REJECTION_ACTION");
-
-
+   /* ---------------- MASTER DATA ---------------- */
+    const { data: modules = [] } = useMastersByCategory("MODULE");
+    const { data: priorities = [] } = useMastersByCategory("PRIORITY");
+    const { data: approvalTypes = [] } = useMastersByCategory("APPROVAL_TYPE");
+    const { data: flowModes = [] } = useMastersByCategory("FLOW_MODE");
+    const { data: scopes = [] } = useMastersByCategory("APPROVAL_SCOPE");
+    
   const [approvalType, setApprovalType] = useState("single");
   const [steps, setSteps] = useState([]);
 
@@ -74,7 +70,15 @@ const { data: rejectionActions = [] } = useMastersByCategory("REJECTION_ACTION")
     { id: "3", name: "Amit Verma" },
   ];
 
-  
+  // ACTION ITEMS
+  const approvalActions = [
+    { key: "notify_user", label: "Notify User", description: "Send notification to user" },
+    { key: "add_verification_badge", label: "Add Verification Badge", description: "Grant verification badge" },
+  ];
+
+  const rejectionActions = [
+    { key: "notify_user", label: "Notify User", description: "Send notification to user" },
+  ];
 
   const [selectedApprovalActions, setSelectedApprovalActions] = useState([]);
   const [selectedRejectionActions, setSelectedRejectionActions] = useState([]);
@@ -135,12 +139,11 @@ const { data: rejectionActions = [] } = useMastersByCategory("REJECTION_ACTION")
                   <SelectValue placeholder="Select module" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="leave">Leave Request</SelectItem>
-                  <SelectItem value="attendance">Attendance Regularization</SelectItem>
-                  <SelectItem value="travel">Travel Expense</SelectItem>
-                  <SelectItem value="reimbursement">Reimbursement</SelectItem>
-                </SelectContent>
-
+  <SelectItem value="leave">Leave Request</SelectItem>
+  <SelectItem value="attendance">Attendance Regularization</SelectItem>
+  <SelectItem value="travel">Travel Expense</SelectItem>
+  <SelectItem value="reimbursement">Reimbursement</SelectItem>
+</SelectContent>
 
               </Select>
             </div>
@@ -152,12 +155,12 @@ const { data: rejectionActions = [] } = useMastersByCategory("REJECTION_ACTION")
                   <SelectValue placeholder="Select priority" />
                 </SelectTrigger>
                 <SelectContent>
-                  {priorities.map((p) => (
-                    <SelectItem key={p.code} value={p.code}>
-                      {p.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
+  {priorities.map((p) => (
+    <SelectItem key={p.code} value={p.code}>
+      {p.label}
+    </SelectItem>
+  ))}
+</SelectContent>
 
               </Select>
             </div>
@@ -201,13 +204,10 @@ const { data: rejectionActions = [] } = useMastersByCategory("REJECTION_ACTION")
                   <SelectValue placeholder="Choose target" />
                 </SelectTrigger>
                 <SelectContent>
-                  {scopes.map((s) => (
-                    <SelectItem key={s.code} value={s.code}>
-                      {s.label}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="all">All Employees</SelectItem>
+                  <SelectItem value="department">Department Wise</SelectItem>
+                  <SelectItem value="employee">Employee Specific</SelectItem>
                 </SelectContent>
-
               </Select>
             </div>
 
@@ -274,13 +274,9 @@ const { data: rejectionActions = [] } = useMastersByCategory("REJECTION_ACTION")
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
-                  {approvalTypes.map((a) => (
-                    <SelectItem key={a.code} value={a.code}>
-                      {a.label}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="single">Single Approval</SelectItem>
+                  <SelectItem value="multiple">Multiple Approval</SelectItem>
                 </SelectContent>
-
               </Select>
             </div>
 
@@ -292,13 +288,9 @@ const { data: rejectionActions = [] } = useMastersByCategory("REJECTION_ACTION")
                     <SelectValue placeholder="Select mode" />
                   </SelectTrigger>
                   <SelectContent>
-                    {flowModes.map((f) => (
-                      <SelectItem key={f.code} value={f.code}>
-                        {f.label}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="sequence">Sequence</SelectItem>
+                    <SelectItem value="parallel">Parallel</SelectItem>
                   </SelectContent>
-
                 </Select>
               </div>
             )}
@@ -447,11 +439,11 @@ const { data: rejectionActions = [] } = useMastersByCategory("REJECTION_ACTION")
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
               {approvalActions.map((action) => {
-                const active = selectedApprovalActions.includes(action.code);
+                const active = selectedApprovalActions.includes(action.key);
                 return (
                   <div
-                    key={action.code}
-                    onClick={() => toggleApprovalAction(action.code)}
+                    key={action.key}
+                    onClick={() => toggleApprovalAction(action.key)}
                     className={`cursor-pointer p-5 border rounded-xl shadow-sm hover:shadow-md transition-all ${active ? "bg-green-50 border-green-400" : "bg-white border"
                       }`}
                   >
@@ -476,11 +468,11 @@ const { data: rejectionActions = [] } = useMastersByCategory("REJECTION_ACTION")
             {selectedApprovalActions.length > 0 && (
               <div className="space-y-2">
                 <h3 className="font-semibold">Selected Approval Actions</h3>
-                {selectedApprovalActions.map((code, index) => {
-                  const action = approvalActions.find((a) => a.code === code);
+                {selectedApprovalActions.map((key, index) => {
+                  const action = approvalActions.find((a) => a.key === key);
                   return (
                     <div
-                      key={code}
+                      key={key}
                       className="flex items-center justify-between bg-green-50 border border-green-300 p-4 rounded-xl"
                     >
                       <div className="flex items-center gap-3">
@@ -494,7 +486,7 @@ const { data: rejectionActions = [] } = useMastersByCategory("REJECTION_ACTION")
                         </div>
                       </div>
 
-                      <Button variant="ghost" onClick={() => removeApprovalAction(code)}>
+                      <Button variant="ghost" onClick={() => removeApprovalAction(key)}>
                         <Trash2 className="h-5 w-5 text-red-600" />
                       </Button>
                     </div>
@@ -524,11 +516,11 @@ const { data: rejectionActions = [] } = useMastersByCategory("REJECTION_ACTION")
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
               {rejectionActions.map((action) => {
-                const active = selectedRejectionActions.includes(action.code);
+                const active = selectedRejectionActions.includes(action.key);
                 return (
                   <div
-                    key={action.code}
-                    onClick={() => toggleRejectionAction(action.code)}
+                    key={action.key}
+                    onClick={() => toggleRejectionAction(action.key)}
                     className={`cursor-pointer p-5 border rounded-xl shadow-sm hover:shadow-md transition-all ${active ? "bg-red-50 border-red-400" : "bg-white border"
                       }`}
                   >
@@ -553,11 +545,11 @@ const { data: rejectionActions = [] } = useMastersByCategory("REJECTION_ACTION")
             {selectedRejectionActions.length > 0 && (
               <div className="space-y-2">
                 <h3 className="font-semibold">Selected Rejection Actions</h3>
-                {selectedRejectionActions.map((code, index) => {
-                  const action = rejectionActions.find((a) => a.code === code);
+                {selectedRejectionActions.map((key, index) => {
+                  const action = rejectionActions.find((a) => a.key === key);
                   return (
                     <div
-                      key={code}
+                      key={key}
                       className="flex items-center justify-between bg-red-50 border border-red-300 p-4 rounded-xl"
                     >
                       <div className="flex items-center gap-3">
@@ -571,7 +563,7 @@ const { data: rejectionActions = [] } = useMastersByCategory("REJECTION_ACTION")
                         </div>
                       </div>
 
-                      <Button variant="ghost" onClick={() => removeRejectionAction(code)}>
+                      <Button variant="ghost" onClick={() => removeRejectionAction(key)}>
                         <Trash2 className="h-5 w-5 text-red-600" />
                       </Button>
                     </div>
