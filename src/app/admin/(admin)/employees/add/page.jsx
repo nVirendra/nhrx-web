@@ -28,9 +28,12 @@ import { useGrades } from "@/features/grade/grade.api";
 
 const EmployeeFormTabs = ({ mode = "create", employeeData = {} }) => {
 
+  const isEdit = mode === "edit";
+  // const isEdit = mode === "edit";
+
   const { data: employeeDetails } = useEmployeeDetails(
-  mode === "edit" ? employeeData.id : null
-);
+    isEdit ? employeeData.id : null
+  );
 
 useEffect(() => {
   if (!employeeDetails) return;
@@ -125,7 +128,7 @@ useEffect(() => {
   const updateSection = useUpdateEmployeeSection();
 
   const [employeeId, setEmployeeId] = useState(employeeData.id || null);
-  const isEdit = mode === "edit";
+ 
   const [activeTab, setActiveTab] = useState("profile");
 
   /* ---------- FORM STATE ---------- */

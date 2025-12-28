@@ -11,6 +11,16 @@ export const useCreateEmployee = () => {
   });
 };
 
+export const useEmployees = (params) => {
+  return useQuery({
+    queryKey: ["employees", params],
+    queryFn: async () => {
+      const res = await api.get("/api/v1/employees", { params });
+      return res.data;
+    },
+    keepPreviousData: true,
+  });
+};
 
 /* ---------------- GET EMPLOYEE ---------------- */
 export const useEmployeeDetails = (employeeId) => {
