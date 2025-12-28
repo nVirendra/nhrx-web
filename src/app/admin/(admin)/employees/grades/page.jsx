@@ -33,49 +33,75 @@ import {
 
 import { Layers, Plus, Edit, Trash2 } from "lucide-react";
 
+/* ---------------- API ---------------- */
+import {
+  useGrades,
+  useCreateGrade,
+  useUpdateGrade,
+  useToggleGradeStatus,
+  useDeleteGrade,
+} from "@/features/grade/grade.api";
+
 export default function Grades() {
   const [open, setOpen] = React.useState(false);
   const [editGrade, setEditGrade] = React.useState(null);
 
-  // Mock Grade Data (replace with API)
-  const grades = [
-    {
-      id: 1,
-      name: "Grade A",
-      code: "A",
-      minSalary: 25000,
-      maxSalary: 50000,
-      description: "Senior level employees",
-      status: true,
-    },
-    {
-      id: 2,
-      name: "Grade B",
-      code: "B",
-      minSalary: 15000,
-      maxSalary: 25000,
-      description: "Mid level employees",
-      status: true,
-    },
-    {
-      id: 3,
-      name: "Grade C",
-      code: "C",
-      minSalary: 8000,
-      maxSalary: 15000,
-      description: "Junior level employees",
-      status: false,
-    },
-  ];
+  const [name, setName] = React.useState("");
+  const [code, setCode] = React.useState("");
+  const [minSalary, setMinSalary] = React.useState("");
+  const [maxSalary, setMaxSalary] = React.useState("");
+  const [description, setDescription] = React.useState("");
+  const [isActive, setIsActive] = React.useState(true);
 
+  const { data: grades = [] } = useGrades();
+
+  const createGrade = useCreateGrade();
+  const updateGrade = useUpdateGrade();
+  const toggleStatus = useToggleGradeStatus();
+  const deleteGrade = useDeleteGrade();
+
+  /* ---------------- OPEN CREATE ---------------- */
   const openCreate = () => {
     setEditGrade(null);
+    setName("");
+    setCode("");
+    setMinSalary("");
+    setMaxSalary("");
+    setDescription("");
+    setIsActive(true);
     setOpen(true);
   };
 
+  /* ---------------- OPEN EDIT ---------------- */
   const openEdit = (grade) => {
     setEditGrade(grade);
+    setName(grade.name);
+    setCode(grade.code);
+    setMinSalary(String(grade.minSalary));
+    setMaxSalary(String(grade.maxSalary));
+    setDescription(grade.description || "");
+    setIsActive(grade.isActive);
     setOpen(true);
+  };
+
+  /* ---------------- SUBMIT ---------------- */
+  const handleSubmit = () => {
+    const payload = {
+      name,
+      code,
+      minSalary: Number(minSalary),
+      maxSalary: Number(maxSalary),
+      description,
+      isActive,
+    };
+
+    if (editGrade) {
+      updateGrade.mutate({ id: editGrade.id, payload });
+    } else {
+      createGrade.mutate(payload);
+    }
+
+    setOpen(false);
   };
 
   return (
@@ -94,7 +120,7 @@ export default function Grades() {
         </Button>
       </div>
 
-      {/* ---------------- GRADE TABLE ---------------- */}
+      {/* ---------------- TABLE ---------------- */}
       <Card>
         <CardHeader>
           <CardTitle>Grade List</CardTitle>
@@ -130,15 +156,23 @@ export default function Grades() {
                   <TableCell>{grade.description}</TableCell>
 
                   <TableCell>
-                    {grade.status ? (
-                      <Badge className="bg-green-500/15 text-green-600">
-                        Active
-                      </Badge>
-                    ) : (
-                      <Badge className="bg-red-500/15 text-red-600">
-                        Inactive
-                      </Badge>
-                    )}
+                    <div className="flex items-center gap-3">
+                      <Switch
+                        checked={grade.isActive}
+                        onCheckedChange={() =>
+                          toggleStatus.mutate(grade.id)
+                        }
+                      />
+                      {grade.isActive ? (
+                        <Badge className="bg-green-500/15 text-green-600">
+                          Active
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-red-500/15 text-red-600">
+                          Inactive
+                        </Badge>
+                      )}
+                    </div>
                   </TableCell>
 
                   <TableCell className="text-right flex justify-end gap-2">
@@ -154,6 +188,7 @@ export default function Grades() {
                       size="icon"
                       variant="ghost"
                       className="text-red-600"
+                      onClick={() => deleteGrade.mutate(grade.id)}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -165,7 +200,7 @@ export default function Grades() {
         </CardContent>
       </Card>
 
-      {/* ---------------- CREATE / EDIT GRADE ---------------- */}
+      {/* ---------------- CREATE / EDIT ---------------- */}
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent className="w-full sm:max-w-md">
           <SheetHeader>
@@ -177,38 +212,46 @@ export default function Grades() {
           <div className="space-y-4 mt-6">
             <Input
               placeholder="Grade Name (e.g. Grade A)"
-              defaultValue={editGrade?.name || ""}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
             />
 
             <Input
               placeholder="Grade Code (A / B / C / G1)"
-              defaultValue={editGrade?.code || ""}
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
             />
 
             <div className="grid grid-cols-2 gap-3">
               <Input
                 type="number"
                 placeholder="Min Salary"
-                defaultValue={editGrade?.minSalary || ""}
+                value={minSalary}
+                onChange={(e) => setMinSalary(e.target.value)}
               />
               <Input
                 type="number"
                 placeholder="Max Salary"
-                defaultValue={editGrade?.maxSalary || ""}
+                value={maxSalary}
+                onChange={(e) => setMaxSalary(e.target.value)}
               />
             </div>
 
             <Textarea
               placeholder="Grade Description"
-              defaultValue={editGrade?.description || ""}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
             />
 
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Active</span>
-              <Switch defaultChecked={editGrade?.status ?? true} />
+              <Switch
+                checked={isActive}
+                onCheckedChange={setIsActive}
+              />
             </div>
 
-            <Button className="w-full mt-4">
+            <Button className="w-full mt-4" onClick={handleSubmit}>
               {editGrade ? "Update Grade" : "Create Grade"}
             </Button>
           </div>

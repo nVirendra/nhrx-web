@@ -25,7 +25,6 @@ import { Switch } from "@/components/ui/switch";
 
 import {
   Sheet,
-  SheetTrigger,
   SheetContent,
   SheetHeader,
   SheetTitle,
@@ -33,40 +32,61 @@ import {
 
 import { Building2, Plus, Edit, Trash2 } from "lucide-react";
 
+/* ----------- API HOOKS ----------- */
+import {
+  useDepartments,
+  useCreateDepartment,
+  useUpdateDepartment,
+  useToggleDepartmentStatus,
+  useDeleteDepartment,
+} from "@/features/department/department.api";
+
 export default function Departments() {
   const [open, setOpen] = React.useState(false);
   const [editDepartment, setEditDepartment] = React.useState(null);
 
-  // Mock Data (replace with API)
-  const departments = [
-    {
-      id: 1,
-      name: "Engineering",
-      description: "Software development & maintenance",
-      status: true,
-    },
-    {
-      id: 2,
-      name: "Human Resources",
-      description: "Hiring, payroll & policies",
-      status: true,
-    },
-    {
-      id: 3,
-      name: "Sales",
-      description: "Client acquisition & revenue",
-      status: false,
-    },
-  ];
+  const [name, setName] = React.useState("");
+  const [description, setDescription] = React.useState("");
+  const [isActive, setIsActive] = React.useState(true);
 
+  const { data: departments = [] } = useDepartments();
+  const createDepartment = useCreateDepartment();
+  const updateDepartment = useUpdateDepartment();
+  const toggleStatus = useToggleDepartmentStatus();
+  const deleteDepartment = useDeleteDepartment();
+
+  /* ---------------- OPEN CREATE ---------------- */
   const openCreate = () => {
     setEditDepartment(null);
+    setName("");
+    setDescription("");
+    setIsActive(true);
     setOpen(true);
   };
 
+  /* ---------------- OPEN EDIT ---------------- */
   const openEdit = (dept) => {
     setEditDepartment(dept);
+    setName(dept.name);
+    setDescription(dept.description || "");
+    setIsActive(dept.isActive);
     setOpen(true);
+  };
+
+  /* ---------------- SUBMIT ---------------- */
+  const handleSubmit = () => {
+    const payload = { name, description, isActive };
+
+    if (editDepartment) {
+      updateDepartment.mutate({
+        id: editDepartment.id,
+        payload,
+      });
+    } else {
+      createDepartment.mutate(payload);
+    }
+
+    setOpen(false);
   };
 
   return (
@@ -85,7 +105,7 @@ export default function Departments() {
         </Button>
       </div>
 
-      {/* ---------------- DEPARTMENT TABLE ---------------- */}
+      {/* ---------------- TABLE ---------------- */}
       <Card>
         <CardHeader>
           <CardTitle>Department List</CardTitle>
@@ -108,18 +128,27 @@ export default function Departments() {
                   <TableCell className="font-medium">
                     {dept.name}
                   </TableCell>
+
                   <TableCell>{dept.description}</TableCell>
 
                   <TableCell>
-                    {dept.status ? (
-                      <Badge className="bg-green-500/15 text-green-600">
-                        Active
-                      </Badge>
-                    ) : (
-                      <Badge className="bg-red-500/15 text-red-600">
-                        Inactive
-                      </Badge>
-                    )}
+                    <div className="flex items-center gap-3">
+                      <Switch
+                        checked={dept.isActive}
+                        onCheckedChange={() =>
+                          toggleStatus.mutate(dept.id)
+                        }
+                      />
+                      {dept.isActive ? (
+                        <Badge className="bg-green-500/15 text-green-600">
+                          Active
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-red-500/15 text-red-600">
+                          Inactive
+                        </Badge>
+                      )}
+                    </div>
                   </TableCell>
 
                   <TableCell className="text-right flex justify-end gap-2">
@@ -135,6 +164,7 @@ export default function Departments() {
                       size="icon"
                       variant="ghost"
                       className="text-red-600"
+                      onClick={() => deleteDepartment.mutate(dept.id)}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -158,20 +188,22 @@ export default function Departments() {
           <div className="space-y-4 mt-6">
             <Input
               placeholder="Department Name"
-              defaultValue={editDepartment?.name || ""}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
             />
 
             <Textarea
               placeholder="Department Description"
-              defaultValue={editDepartment?.description || ""}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
             />
 
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Active</span>
-              <Switch defaultChecked={editDepartment?.status ?? true} />
+              <Switch checked={isActive} onCheckedChange={setIsActive} />
             </div>
 
-            <Button className="w-full mt-4">
+            <Button className="w-full mt-4" onClick={handleSubmit}>
               {editDepartment ? "Update Department" : "Create Department"}
             </Button>
           </div>

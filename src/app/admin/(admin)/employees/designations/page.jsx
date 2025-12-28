@@ -34,7 +34,6 @@ import {
 
 import {
   Sheet,
-  SheetTrigger,
   SheetContent,
   SheetHeader,
   SheetTitle,
@@ -42,50 +41,73 @@ import {
 
 import { Briefcase, Plus, Edit, Trash2 } from "lucide-react";
 
+/* ---------------- API HOOKS ---------------- */
+import { useDepartments } from "@/features/department/department.api";
+import {
+  useDesignations,
+  useCreateDesignation,
+  useUpdateDesignation,
+  useToggleDesignationStatus,
+  useDeleteDesignation,
+} from "@/features/designation/designation.api";
+
 export default function Designations() {
   const [open, setOpen] = React.useState(false);
   const [editDesignation, setEditDesignation] = React.useState(null);
 
-  // Mock department master (replace with API)
-  const departments = [
-    { id: 1, name: "Engineering" },
-    { id: 2, name: "Human Resources" },
-    { id: 3, name: "Sales" },
-  ];
+  const [name, setName] = React.useState("");
+  const [departmentId, setDepartmentId] = React.useState("");
+  const [description, setDescription] = React.useState("");
+  const [isActive, setIsActive] = React.useState(true);
 
-  // Mock designation data (replace with API)
-  const designations = [
-    {
-      id: 1,
-      name: "Software Engineer",
-      department: "Engineering",
-      description: "Responsible for application development",
-      status: true,
-    },
-    {
-      id: 2,
-      name: "HR Executive",
-      department: "Human Resources",
-      description: "Handles hiring & employee relations",
-      status: true,
-    },
-    {
-      id: 3,
-      name: "Sales Manager",
-      department: "Sales",
-      description: "Manages sales targets & team",
-      status: false,
-    },
-  ];
+  /* ---------------- DATA ---------------- */
+  const { data: departments = [] } = useDepartments();
+  const { data: designations = [] } = useDesignations();
 
+  const createDesignation = useCreateDesignation();
+  const updateDesignation = useUpdateDesignation();
+  const toggleStatus = useToggleDesignationStatus();
+  const deleteDesignation = useDeleteDesignation();
+
+  /* ---------------- OPEN CREATE ---------------- */
   const openCreate = () => {
     setEditDesignation(null);
+    setName("");
+    setDepartmentId("");
+    setDescription("");
+    setIsActive(true);
     setOpen(true);
   };
 
-  const openEdit = (designation) => {
-    setEditDesignation(designation);
+  /* ---------------- OPEN EDIT ---------------- */
+  const openEdit = (item) => {
+    setEditDesignation(item);
+    setName(item.name);
+    setDepartmentId(item.departmentId);
+    setDescription(item.description || "");
+    setIsActive(item.isActive);
     setOpen(true);
+  };
+
+  /* ---------------- SUBMIT ---------------- */
+  const handleSubmit = () => {
+    const payload = {
+      name,
+      departmentId: Number(departmentId),
+      description,
+      isActive,
+    };
+
+    if (editDesignation) {
+      updateDesignation.mutate({
+        id: editDesignation.id,
+        payload,
+      });
+    } else {
+      createDesignation.mutate(payload);
+    }
+
+    setOpen(false);
   };
 
   return (
@@ -104,7 +126,7 @@ export default function Designations() {
         </Button>
       </div>
 
-      {/* ---------------- DESIGNATION TABLE ---------------- */}
+      {/* ---------------- TABLE ---------------- */}
       <Card>
         <CardHeader>
           <CardTitle>Designation List</CardTitle>
@@ -129,20 +151,30 @@ export default function Designations() {
                     {item.name}
                   </TableCell>
 
-                  <TableCell>{item.department}</TableCell>
+                  <TableCell>
+                    {item.department?.name}
+                  </TableCell>
 
                   <TableCell>{item.description}</TableCell>
 
                   <TableCell>
-                    {item.status ? (
-                      <Badge className="bg-green-500/15 text-green-600">
-                        Active
-                      </Badge>
-                    ) : (
-                      <Badge className="bg-red-500/15 text-red-600">
-                        Inactive
-                      </Badge>
-                    )}
+                    <div className="flex items-center gap-3">
+                      <Switch
+                        checked={item.isActive}
+                        onCheckedChange={() =>
+                          toggleStatus.mutate(item.id)
+                        }
+                      />
+                      {item.isActive ? (
+                        <Badge className="bg-green-500/15 text-green-600">
+                          Active
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-red-500/15 text-red-600">
+                          Inactive
+                        </Badge>
+                      )}
+                    </div>
                   </TableCell>
 
                   <TableCell className="text-right flex justify-end gap-2">
@@ -158,6 +190,7 @@ export default function Designations() {
                       size="icon"
                       variant="ghost"
                       className="text-red-600"
+                      onClick={() => deleteDesignation.mutate(item.id)}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -169,7 +202,7 @@ export default function Designations() {
         </CardContent>
       </Card>
 
-      {/* ---------------- CREATE / EDIT DESIGNATION ---------------- */}
+      {/* ---------------- CREATE / EDIT ---------------- */}
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent className="w-full sm:max-w-md">
           <SheetHeader>
@@ -181,16 +214,23 @@ export default function Designations() {
           <div className="space-y-4 mt-6">
             <Input
               placeholder="Designation Name"
-              defaultValue={editDesignation?.name || ""}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
             />
 
-            <Select defaultValue={editDesignation?.department || ""}>
+            <Select
+              value={departmentId}
+              onValueChange={setDepartmentId}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select Department" />
               </SelectTrigger>
               <SelectContent>
                 {departments.map((dept) => (
-                  <SelectItem key={dept.id} value={dept.name}>
+                  <SelectItem
+                    key={dept.id}
+                    value={String(dept.id)}
+                  >
                     {dept.name}
                   </SelectItem>
                 ))}
@@ -199,15 +239,19 @@ export default function Designations() {
 
             <Textarea
               placeholder="Designation Description"
-              defaultValue={editDesignation?.description || ""}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
             />
 
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Active</span>
-              <Switch defaultChecked={editDesignation?.status ?? true} />
+              <Switch
+                checked={isActive}
+                onCheckedChange={setIsActive}
+              />
             </div>
 
-            <Button className="w-full mt-4">
+            <Button className="w-full mt-4" onClick={handleSubmit}>
               {editDesignation ? "Update Designation" : "Create Designation"}
             </Button>
           </div>
