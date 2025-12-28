@@ -71,6 +71,7 @@ export default function Sidebar() {
       children: [
         { label: "Employee Directory", path: "/admin/employees/directory" },
         { label: "Add Employee", path: "/admin/employees/add" },
+        { label: "Branches", path: "/admin/employees/branches" },
         { label: "Departments", path: "/admin/employees/departments" },
         { label: "Designations", path: "/admin/employees/designations" },
         { label: "Grade", path: "/admin/employees/grades" },
