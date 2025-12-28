@@ -135,10 +135,11 @@ const { data: rejectionActions = [] } = useMastersByCategory("REJECTION_ACTION")
                   <SelectValue placeholder="Select module" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="leave">Leave Request</SelectItem>
-                  <SelectItem value="attendance">Attendance Regularization</SelectItem>
-                  <SelectItem value="travel">Travel Expense</SelectItem>
-                  <SelectItem value="reimbursement">Reimbursement</SelectItem>
+                  {modules.map((m) => (
+                    <SelectItem key={m.code} value={m.code}>
+                      {m.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
 
 

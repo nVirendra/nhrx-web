@@ -1,40 +1,138 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect  } from "react";
 
+/* ---------- UI ---------- */
 import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  CardDescription,
+  Card, CardHeader, CardTitle, CardContent, CardDescription,
 } from "@/components/ui/card";
 
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-} from "@/components/ui/tabs";
-
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import {
+  Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-
 import { Upload, Save } from "lucide-react";
 
-const EmployeeFormTabs = ({ mode = "create", employeeData = {} }) => {
-  const isEdit = mode === "edit";
+/* ---------- APIs ---------- */
+import { useMastersByCategory } from "@/features/masters/master.api";
+import { useCreateEmployee, useUpdateEmployeeSection, useEmployeeDetails } from "@/features/employee/employee.api";
+import { useBranches } from "@/features/branch/branch.api";
+import { useDepartments } from "@/features/department/department.api";
+import { useDesignations } from "@/features/designation/designation.api";
+import { useGrades } from "@/features/grade/grade.api";
 
+const EmployeeFormTabs = ({ mode = "create", employeeData = {} }) => {
+
+  const { data: employeeDetails } = useEmployeeDetails(
+  mode === "edit" ? employeeData.id : null
+);
+
+useEffect(() => {
+  if (!employeeDetails) return;
+
+  setEmployeeId(employeeDetails.id);
+
+  setFormData({
+    avatar: employeeDetails.avatarUrl || "",
+
+    firstName: employeeDetails.firstName || "",
+    lastName: employeeDetails.lastName || "",
+    email: employeeDetails.email || "",
+    phone: employeeDetails.phone || "",
+    dob: employeeDetails.dateOfBirth
+      ? employeeDetails.dateOfBirth.split("T")[0]
+      : "",
+
+    gender: employeeDetails.genderId || "",
+    maritalStatus: employeeDetails.maritalStatusId || "",
+    bloodGroup: employeeDetails.bloodGroupId || "",
+
+    address: employeeDetails.address || "",
+    city: employeeDetails.city || "",
+    state: employeeDetails.state || "",
+    zip: employeeDetails.zip || "",
+
+    employeeCode: employeeDetails.employeeCode || "",
+    department: employeeDetails.departmentId || "",
+    designation: employeeDetails.designationId || "",
+    branch: employeeDetails.branchId || "",
+    grade: employeeDetails.gradeId || "",
+    employmentType: employeeDetails.employmentTypeId || "",
+    joiningDate: employeeDetails.joiningDate
+      ? employeeDetails.joiningDate.split("T")[0]
+      : "",
+    reportingManager: employeeDetails.reportingManagerId || "",
+    status: employeeDetails.status || "Active",
+
+    ctc: employeeDetails.salary?.ctc || "",
+    basic: employeeDetails.salary?.basic || "",
+    hra: employeeDetails.salary?.hra || "",
+    allowances: employeeDetails.salary?.allowances || "",
+
+    bankName: employeeDetails.bank?.bankName || "",
+    accountNumber: employeeDetails.bank?.accountNumber || "",
+    ifsc: employeeDetails.bank?.ifsc || "",
+
+    emergencyName: employeeDetails.emergency?.name || "",
+    emergencyPhone: employeeDetails.emergency?.phone || "",
+    emergencyRelation: employeeDetails.emergency?.relation || "",
+
+    highestEducation: employeeDetails.education?.highestEducation || "",
+    university: employeeDetails.education?.university || "",
+    passingYear: employeeDetails.education?.passingYear || "",
+
+    shift: employeeDetails.attendance?.shift || "",
+    weeklyOff: employeeDetails.attendance?.weeklyOff || "",
+    biometricId: employeeDetails.attendance?.biometricId || "",
+
+    workHistory:
+      employeeDetails.workHistory?.length > 0
+        ? employeeDetails.workHistory.map((w) => ({
+            company: w.company,
+            role: w.role,
+            fromDate: w.fromDate
+              ? w.fromDate.split("T")[0]
+              : "",
+            toDate: w.toDate ? w.toDate.split("T")[0] : "",
+          }))
+        : [{ company: "", role: "", fromDate: "", toDate: "" }],
+
+    notes: employeeDetails.notes || "",
+  });
+}, [employeeDetails]);
+
+
+  /* ---------- Masters ---------- */
+  const { data: genders = [] } = useMastersByCategory("GENDER");
+  const { data: maritalStatuses = [] } = useMastersByCategory("MARITAL_STATUS");
+  const { data: bloodGroups = [] } = useMastersByCategory("BLOOD_GROUP");
+  const { data: employmentTypes = [] } = useMastersByCategory("EMPLOYMENT_TYPE");
+  
+
+  /* ---------- Org Masters ---------- */
+  const { data: branches = [] } = useBranches();
+  const { data: departments = [] } = useDepartments();
+  const { data: designations = [] } = useDesignations();
+  const { data: grades = [] } = useGrades();
+
+  /* ---------- API ---------- */
+  const createEmployee = useCreateEmployee();
+  const updateSection = useUpdateEmployeeSection();
+
+  const [employeeId, setEmployeeId] = useState(employeeData.id || null);
+  const isEdit = mode === "edit";
   const [activeTab, setActiveTab] = useState("profile");
 
+  /* ---------- FORM STATE ---------- */
   const [formData, setFormData] = useState({
     avatar: "",
 
-    // Personal
+    /* PERSONAL */
     firstName: employeeData.firstName || "",
     lastName: employeeData.lastName || "",
     email: employeeData.email || "",
@@ -48,47 +146,46 @@ const EmployeeFormTabs = ({ mode = "create", employeeData = {} }) => {
     state: employeeData.state || "",
     zip: employeeData.zip || "",
 
-    // Job
-    employeeId: employeeData.employeeId || "",
+    /* JOB */
+    employeeCode: employeeData.employeeCode || "",
     department: employeeData.department || "",
     designation: employeeData.designation || "",
+    branch: employeeData.branch || "",
+    grade: employeeData.grade || "",
+    employmentType: employeeData.employmentType || "",
     joiningDate: employeeData.joiningDate || "",
     workLocation: employeeData.workLocation || "",
-    employmentType: employeeData.employmentType || "",
-    branch: employeeData.branch || "",
     reportingManager: employeeData.reportingManager || "",
     status: employeeData.status || "Active",
 
-    // Salary
+    /* SALARY */
     ctc: employeeData.ctc || "",
     basic: employeeData.basic || "",
     hra: employeeData.hra || "",
     allowances: employeeData.allowances || "",
 
-    // Bank
+    /* BANK */
     bankName: employeeData.bankName || "",
     accountNumber: employeeData.accountNumber || "",
     ifsc: employeeData.ifsc || "",
 
-    // Emergency
+    /* EMERGENCY */
     emergencyName: employeeData.emergencyName || "",
     emergencyPhone: employeeData.emergencyPhone || "",
     emergencyRelation: employeeData.emergencyRelation || "",
 
-    // Education
+    /* EDUCATION */
     highestEducation: employeeData.highestEducation || "",
     university: employeeData.university || "",
     passingYear: employeeData.passingYear || "",
 
-    // Attendance
+    /* ATTENDANCE */
     shift: employeeData.shift || "",
     weeklyOff: employeeData.weeklyOff || "",
     biometricId: employeeData.biometricId || "",
 
-    // Dynamic Work History
-    workHistory: employeeData.workHistory || [
-      { company: "", role: "", fromDate: "", toDate: "" },
-    ],
+    /* WORK */
+    workHistory: employeeData.workHistory || [{ company: "", role: "", fromDate: "", toDate: "" }],
 
     notes: employeeData.notes || "",
   });
@@ -96,10 +193,129 @@ const EmployeeFormTabs = ({ mode = "create", employeeData = {} }) => {
   const handleChange = (key, value) =>
     setFormData((prev) => ({ ...prev, [key]: value }));
 
-  const handleSectionSave = (sectionName) => {
-    console.log(`Saving Section: ${sectionName}`, formData);
-  };
+  /* ======================================================
+     SAVE SECTION
+  ====================================================== */
+  const handleSectionSave = async (sectionName) => {
+    try {
+      let currentEmployeeId = employeeId;
 
+      /* ---------- CREATE EMPLOYEE ---------- */
+      if (!currentEmployeeId) {
+        const res = await createEmployee.mutateAsync({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          phone: formData.phone,
+          password: "Temp@123",
+          businessRoleId: null,
+        });
+
+        currentEmployeeId = res?.id || res?.data?.id;
+        setEmployeeId(currentEmployeeId);
+      }
+
+      /* ---------- PAYLOAD ---------- */
+      let payload = {};
+
+      switch (sectionName.toLowerCase()) {
+        case "profile":
+          payload = { avatarUrl: formData.avatar };
+          break;
+
+        case "personal":
+          payload = {
+            dob: formData.dob,
+            genderId: Number(formData.gender),
+            maritalStatusId: Number(formData.maritalStatus),
+            bloodGroupId: Number(formData.bloodGroup),
+            address: formData.address,
+            city: formData.city,
+            state: formData.state,
+            zip: formData.zip,
+          };
+          break;
+
+        case "job":
+          payload = {
+            employeeCode: formData.employeeCode,
+            departmentId: Number(formData.department),
+            designationId: Number(formData.designation),
+            branchId: Number(formData.branch),
+            gradeId: Number(formData.grade),
+            employmentTypeId: Number(formData.employmentType),
+            joiningDate: formData.joiningDate,
+            reportingManagerId: formData.reportingManager || null,
+            status: formData.status === "Active" ? "Active" : "Inactive",
+          };
+          break;
+
+        case "salary":
+          payload = {
+            ctc: Number(formData.ctc),
+            basic: Number(formData.basic),
+            hra: Number(formData.hra),
+            allowances: Number(formData.allowances),
+          };
+          break;
+
+        case "bank":
+          payload = {
+            bankName: formData.bankName,
+            accountNumber: formData.accountNumber,
+            ifsc: formData.ifsc,
+          };
+          break;
+
+        case "emergency":
+          payload = {
+            name: formData.emergencyName,
+            phone: formData.emergencyPhone,
+            relation: formData.emergencyRelation,
+          };
+          break;
+
+        case "education":
+          payload = {
+            highestEducation: formData.highestEducation,
+            university: formData.university,
+            passingYear: Number(formData.passingYear),
+          };
+          break;
+
+        case "attendance":
+          payload = {
+            shift: formData.shift,
+            weeklyOff: formData.weeklyOff,
+            biometricId: formData.biometricId,
+          };
+          break;
+
+        case "work":
+        case "work history":
+          payload = formData.workHistory;
+          break;
+
+        case "notes":
+          payload = { notes: formData.notes };
+          break;
+
+        default:
+          return;
+      }
+
+      await updateSection.mutateAsync({
+        employeeId: currentEmployeeId,
+        section: sectionName.toLowerCase(),
+        data: payload,
+      });
+
+      alert(`${sectionName} saved successfully ✅`);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save section ❌");
+    }
+  };
   return (
     <div className="p-6 space-y-6">
       {/* HEADER */}
@@ -205,9 +421,11 @@ const EmployeeFormTabs = ({ mode = "create", employeeData = {} }) => {
                 <Select value={formData.gender} onValueChange={v => handleChange("gender", v)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Male">Male</SelectItem>
-                    <SelectItem value="Female">Female</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
+                    {genders.map((g) => (
+                      <SelectItem key={g.id} value={g.id}>
+                        {g.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -217,18 +435,30 @@ const EmployeeFormTabs = ({ mode = "create", employeeData = {} }) => {
                 <Select value={formData.maritalStatus} onValueChange={v => handleChange("maritalStatus", v)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Single">Single</SelectItem>
-                    <SelectItem value="Married">Married</SelectItem>
-                    <SelectItem value="Divorced">Divorced</SelectItem>
-                    <SelectItem value="Widow">Widow</SelectItem>
+                    {maritalStatuses.map((m) => (
+                      <SelectItem key={m.code} value={m.code}>
+                        {m.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              <div>
+               <div>
                 <Label>Blood Group</Label>
-                <Input value={formData.bloodGroup} onChange={e => handleChange("bloodGroup", e.target.value)} />
+                <Select value={formData.bloodGroup} onValueChange={v => handleChange("bloodGroup", v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {bloodGroups.map((bg) => (
+                      <SelectItem key={bg.code} value={bg.code}>
+                        {bg.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+
+              
 
               <div className="md:col-span-3">
                 <Label>Address</Label>
@@ -278,17 +508,27 @@ const EmployeeFormTabs = ({ mode = "create", employeeData = {} }) => {
                 <Select value={formData.department} onValueChange={v => handleChange("department", v)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Engineering">Engineering</SelectItem>
-                    <SelectItem value="HR">HR</SelectItem>
-                    <SelectItem value="Finance">Finance</SelectItem>
-                    <SelectItem value="Marketing">Marketing</SelectItem>
+                    {departments.map((dept) => (
+                      <SelectItem key={dept.id} value={dept.id}>
+                        {dept.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
                 <Label>Designation *</Label>
-                <Input value={formData.designation} onChange={e => handleChange("designation", e.target.value)} />
+                 <Select value={formData.designation} onValueChange={v => handleChange("designation", v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {designations.map((des) => (
+                      <SelectItem key={des.id} value={des.id}>
+                        {des.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
@@ -298,7 +538,30 @@ const EmployeeFormTabs = ({ mode = "create", employeeData = {} }) => {
 
               <div>
                 <Label>Branch</Label>
-                <Input value={formData.branch} onChange={e => handleChange("branch", e.target.value)} />
+                <Select value={formData.branch} onValueChange={v => handleChange("branch", v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {branches.map((branch) => (
+                      <SelectItem key={branch.id} value={branch.id}>
+                        {branch.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Grade</Label>
+                <Select value={formData.grade} onValueChange={v => handleChange("grade", v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {grades.map((grd) => (
+                      <SelectItem key={grd.id} value={grd.id}>
+                        {grd.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
@@ -316,10 +579,11 @@ const EmployeeFormTabs = ({ mode = "create", employeeData = {} }) => {
                 <Select value={formData.employmentType} onValueChange={v => handleChange("employmentType", v)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Full-Time">Full-Time</SelectItem>
-                    <SelectItem value="Part-Time">Part-Time</SelectItem>
-                    <SelectItem value="Intern">Intern</SelectItem>
-                    <SelectItem value="Contract">Contract</SelectItem>
+                    {employmentTypes.map((emp_type) => (
+                      <SelectItem key={emp_type.code} value={emp_type.code}>
+                        {emp_type.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
