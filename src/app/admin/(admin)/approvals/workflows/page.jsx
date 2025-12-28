@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 import {
   Card,
@@ -40,9 +40,13 @@ import {
 
 
 import { useMastersByCategory } from "@/features/masters/master.api";
+import { useDepartments } from "@/features/department/department.api";
+import { useEmployees } from "@/features/employee/employee.api";
+import { useGetRoles } from "@/features/role/role-v2.api";
 
 
 export default function ApprovalWorkflowPage() {
+
 
   /* ---------------- MASTER DATA ---------------- */
   const { data: modules = [] } = useMastersByCategory("MODULE");
@@ -52,7 +56,10 @@ export default function ApprovalWorkflowPage() {
   const { data: scopes = [] } = useMastersByCategory("APPROVAL_SCOPE");
 
   const { data: approvalActions = [] } = useMastersByCategory("APPROVAL_ACTION");
-const { data: rejectionActions = [] } = useMastersByCategory("REJECTION_ACTION");
+  const { data: rejectionActions = [] } = useMastersByCategory("REJECTION_ACTION");
+  const { data: approvalAuthorities = [] } = useMastersByCategory("APPROVAL_AUTHORITY");
+
+  const { data: roles = [] } = useGetRoles();
 
 
   const [approvalType, setApprovalType] = useState("single");
@@ -62,19 +69,41 @@ const { data: rejectionActions = [] } = useMastersByCategory("REJECTION_ACTION")
   const [workflowScope, setWorkflowScope] = useState("all");
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [selectedEmployee, setSelectedEmployee] = useState("");
+  const [openDepartment, setOpenDepartment] = useState(false);
+  const [openEmployee, setOpenEmployee] = useState(false);
 
   // AUTO ESCALATION STATE
   const [autoEscalation, setAutoEscalation] = useState(false);
 
 
-  const departments = ["HR", "Finance", "Engineering", "IT", "Admin", "Sales"];
-  const employees = [
-    { id: "1", name: "Virendra Nishad" },
-    { id: "2", name: "Priya Sharma" },
-    { id: "3", name: "Amit Verma" },
-  ];
+  /* ---------------- DYNAMIC DATA ---------------- */
+  const { data: departments = [], isLoading: deptLoading } = useDepartments();
 
   
+
+  const { data: employeeRes, isLoading: empLoading } = useEmployees();
+
+
+
+  const employees = employeeRes?.data || [];
+
+
+  useEffect(() => {
+    setSelectedDepartment("");
+    setSelectedEmployee("");
+    if (workflowScope === "DEPARTMENT") {
+      setOpenDepartment(true);
+    } else {
+      setOpenDepartment(false);
+    }
+    if (workflowScope === "EMPLOYEE") {
+      setOpenEmployee(true);
+    } else {
+      setOpenEmployee(false);
+    }
+  }, [workflowScope]);
+
+
 
   const [selectedApprovalActions, setSelectedApprovalActions] = useState([]);
   const [selectedRejectionActions, setSelectedRejectionActions] = useState([]);
@@ -212,50 +241,71 @@ const { data: rejectionActions = [] } = useMastersByCategory("REJECTION_ACTION")
               </Select>
             </div>
 
+            {workflowScope === "DEPARTMENT" && departments.length === 0 && (
+              <p className="text-sm text-muted-foreground">No departments found</p>
+            )}
+
+            {workflowScope === "EMPLOYEE" && employees.length === 0 && (
+              <p className="text-sm text-muted-foreground">No employees found</p>
+            )}
+
             {/* Department Selection */}
-            {workflowScope === "department" && (
+            {workflowScope === "DEPARTMENT" && (
               <div>
                 <label className="font-medium text-sm">Select Department</label>
                 <Select
                   value={selectedDepartment}
                   onValueChange={setSelectedDepartment}
+                  open={openDepartment}
+                  onOpenChange={setOpenDepartment}
                 >
                   <SelectTrigger className="mt-1">
                     <SelectValue placeholder="Choose department" />
                   </SelectTrigger>
                   <SelectContent>
                     {departments.map((dept) => (
-                      <SelectItem key={dept} value={dept}>
+                      <SelectItem
+                        key={dept.id}
+                        value={String(dept.id)}   // ✅ MUST be string
+                      >
                         <div className="flex items-center gap-2">
-                          <Building2 className="h-4 w-4" /> {dept}
+                          <Building2 className="h-4 w-4" />
+                          {dept.name}
                         </div>
                       </SelectItem>
                     ))}
+
                   </SelectContent>
                 </Select>
               </div>
             )}
 
             {/* Employee Selection */}
-            {workflowScope === "employee" && (
+            {workflowScope === "EMPLOYEE" && (
               <div>
                 <label className="font-medium text-sm">Select Employee</label>
                 <Select
                   value={selectedEmployee}
                   onValueChange={setSelectedEmployee}
+                  open={openEmployee}
+                  onOpenChange={setOpenEmployee}
                 >
                   <SelectTrigger className="mt-1">
                     <SelectValue placeholder="Choose employee" />
                   </SelectTrigger>
                   <SelectContent>
                     {employees.map((emp) => (
-                      <SelectItem key={emp.id} value={emp.id}>
+                      <SelectItem
+                        key={emp.id}
+                        value={String(emp.id)}   // ✅ string
+                      >
                         <div className="flex items-center gap-2">
                           <UserCheck className="h-4 w-4" />
-                          {emp.name}
+                          {emp.name} {emp.email}
                         </div>
                       </SelectItem>
                     ))}
+
                   </SelectContent>
                 </Select>
               </div>
@@ -354,9 +404,11 @@ const { data: rejectionActions = [] } = useMastersByCategory("REJECTION_ACTION")
                           <SelectValue placeholder="Choose approver" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="1">HR Manager</SelectItem>
-                          <SelectItem value="2">Finance Manager</SelectItem>
-                          <SelectItem value="3">Admin Head</SelectItem>
+                          {roles.map((role) => (
+                            <SelectItem key={role.id} value={String(role.id)}>
+                              {role.roleName}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -368,9 +420,11 @@ const { data: rejectionActions = [] } = useMastersByCategory("REJECTION_ACTION")
                           <SelectValue placeholder="Select authority" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="approve">Approve</SelectItem>
-                          <SelectItem value="review">Review Only</SelectItem>
-                          <SelectItem value="final">Final Approval</SelectItem>
+                          {approvalAuthorities.map((auth) => (
+                            <SelectItem key={auth.code} value={auth.code}>
+                              {auth.label}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
