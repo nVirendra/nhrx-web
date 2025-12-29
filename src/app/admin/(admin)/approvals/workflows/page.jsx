@@ -42,6 +42,7 @@ import { useMastersByCategory } from "@/features/masters/master.api";
 import { useDepartments } from "@/features/department/department.api";
 import { useEmployees } from "@/features/employee/employee.api";
 import { useGetRoles } from "@/features/role/role-v2.api";
+import { useCreateApprovalWorkflow } from "@/features/approval/approval-workflow.api";
 
 export default function ApprovalWorkflowPage() {
 
@@ -70,6 +71,11 @@ export default function ApprovalWorkflowPage() {
   const [openEmployee, setOpenEmployee] = useState(false);
 
   const [autoEscalation, setAutoEscalation] = useState(false);
+
+  const [module, setModule] = useState("");
+const [priority, setPriority] = useState("");
+const [description, setDescription] = useState("");
+const [flowMode, setFlowMode] = useState("");
 
   /* ---------------- DYNAMIC DATA ---------------- */
   const { data: departments = [] } = useDepartments();
@@ -125,6 +131,86 @@ export default function ApprovalWorkflowPage() {
     );
   };
 
+
+  const { mutate: createWorkflow, isLoading } = useCreateApprovalWorkflow();
+
+  const handleSaveWorkflow = () => {
+  // --- basic validation ---
+  if (!module || !priority || !approvalType) {
+    toast.error("Module, Priority and Approval Type are required");
+    return;
+  }
+
+  if (approvalType === "multiple" && !flowMode) {
+    toast.error("Flow mode is required for multiple approval");
+    return;
+  }
+
+  if (workflowScope === "DEPARTMENT" && !selectedDepartment) {
+    toast.error("Please select department");
+    return;
+  }
+
+  if (workflowScope === "EMPLOYEE" && !selectedEmployee) {
+    toast.error("Please select employee");
+    return;
+  }
+
+  if (!steps.length) {
+    toast.error("At least one approval step is required");
+    return;
+  }
+
+  const payload = {
+    module,
+    priority,
+    description,
+    approvalType,
+    flowMode: approvalType === "multiple" ? flowMode : null,
+    autoEscalation,
+
+    scope: workflowScope,
+    departmentId:
+      workflowScope === "DEPARTMENT"
+        ? Number(selectedDepartment)
+        : null,
+    employeeId:
+      workflowScope === "EMPLOYEE"
+        ? Number(selectedEmployee)
+        : null,
+
+    steps: steps.map((step, index) => ({
+      levelOrder: index + 1,
+      approverRoleId: Number(step.selectedRole),
+      approverEmployeeId: Number(step.selectedApprover),
+      authority: step.authority,
+      escalateAfterHours: autoEscalation
+        ? Number(step.escalateAfterHours || 0)
+        : null,
+    })),
+
+    approvalActions: selectedApprovalActions,
+    rejectionActions: selectedRejectionActions,
+  };
+
+   console.log("Saving workflow with payload:", payload);
+  return false;
+
+  createWorkflow(payload, {
+    onSuccess: () => {
+      toast.success("Approval workflow created successfully");
+    },
+    onError: (err) => {
+      console.error(err);
+      toast.error("Failed to create approval workflow");
+    },
+  });
+
+ 
+};
+
+
+
   return (
     <div className="p-8">
       <h1 className="text-3xl font-bold">Dynamic Approval Flow</h1>
@@ -145,7 +231,7 @@ export default function ApprovalWorkflowPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <label className="font-medium text-sm">Module</label>
-              <Select>
+              <Select value={module} onValueChange={setModule}>
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Select module" />
                 </SelectTrigger>
@@ -159,7 +245,7 @@ export default function ApprovalWorkflowPage() {
 
             <div>
               <label className="font-medium text-sm">Priority</label>
-              <Select>
+              <Select value={priority} onValueChange={setPriority}>
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Select priority" />
                 </SelectTrigger>
@@ -187,7 +273,13 @@ export default function ApprovalWorkflowPage() {
 
           <div>
             <label className="font-medium text-sm">Description</label>
-            <Textarea placeholder="Describe workflow purpose..." className="mt-1" />
+            <Textarea
+  value={description}
+  onChange={(e) => setDescription(e.target.value)}
+  placeholder="Describe workflow purpose..."
+  className="mt-1"
+/>
+
           </div>
 
           <Separator />
@@ -238,48 +330,63 @@ export default function ApprovalWorkflowPage() {
             )}
 
             {workflowScope === "EMPLOYEE" && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="font-medium text-sm">Select Role</label>
-                  <Select
-                    value={selectedRoleForEmployee}
-                    onValueChange={(v) => { setSelectedRoleForEmployee(v); setSelectedEmployee(""); }}
-                  >
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Choose role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {roles.map((role) => (
-                        <SelectItem key={role.id} value={String(role.id)}>{role.roleName}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="font-medium text-sm">Select Employee</label>
-                  <Select
-                    value={selectedEmployee}
-                    onValueChange={setSelectedEmployee}
-                    open={openEmployee}
-                    onOpenChange={setOpenEmployee}
-                  >
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Choose employee" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {allEmployees
-                        .filter((emp) => emp.roleId === parseInt(selectedRoleForEmployee))
-                        .map((emp) => (
-                          <SelectItem key={emp.id} value={String(emp.id)}>
-                            <div className="flex items-center gap-2">
-                              <UserCheck className="h-4 w-4" />
-                              {emp.name}
-                            </div>
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Employee" />
+                </SelectTrigger>
+                <SelectContent>
+                  {allEmployees.map((emp) => (
+                    <SelectItem key={emp.id} value={String(emp.id)}>
+                      <UserCheck className="h-4 w-4 inline mr-2" />
+                      {emp.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+
+          <Separator />
+
+
+
+          {/* ------------------------------------------------------------------------------------------------ */}
+          {/*                        APPROVAL TYPE SECTION (UNCHANGED)                                         */}
+          {/* ------------------------------------------------------------------------------------------------ */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="font-medium text-sm">Approval Type</label>
+              <Select value={approvalType} onValueChange={setApprovalType}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {approvalTypes.map((a) => (
+                    <SelectItem key={a.code} value={a.code}>
+                      {a.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+
+              </Select>
+            </div>
+
+            {approvalType === "multiple" && (
+              <div>
+                <label className="font-medium text-sm">Flow Mode</label>
+                <Select value={flowMode} onValueChange={setFlowMode}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select mode" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {flowModes.map((f) => (
+                      <SelectItem key={f.code} value={f.code}>
+                        {f.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+
+                </Select>
               </div>
             )}
           </div>
@@ -517,7 +624,15 @@ export default function ApprovalWorkflowPage() {
           </div>
 
           <div className="text-center pt-6">
-            <Button size="lg" className="px-10">Save Workflow</Button>
+            <Button
+  size="lg"
+  className="px-10"
+  onClick={handleSaveWorkflow}
+  disabled={isLoading}
+>
+  {isLoading ? "Saving..." : "Save Workflow"}
+</Button>
+
           </div>
         </CardContent>
       </Card>
