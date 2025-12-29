@@ -43,6 +43,7 @@ import { useDepartments } from "@/features/department/department.api";
 import { useEmployees } from "@/features/employee/employee.api";
 import { useGetRoles } from "@/features/role/role-v2.api";
 import { useCreateApprovalWorkflow } from "@/features/approval/approval-workflow.api";
+import { toast } from "sonner"; 
 
 export default function ApprovalWorkflowPage() {
 
@@ -73,9 +74,9 @@ export default function ApprovalWorkflowPage() {
   const [autoEscalation, setAutoEscalation] = useState(false);
 
   const [module, setModule] = useState("");
-const [priority, setPriority] = useState("");
-const [description, setDescription] = useState("");
-const [flowMode, setFlowMode] = useState("");
+  const [priority, setPriority] = useState("");
+  const [description, setDescription] = useState("");
+  const [flowMode, setFlowMode] = useState("");
 
   /* ---------------- DYNAMIC DATA ---------------- */
   const { data: departments = [] } = useDepartments();
@@ -132,82 +133,89 @@ const [flowMode, setFlowMode] = useState("");
   };
 
 
+  useEffect(() => {
+    if (approvalType !== "multiple") {
+      setFlowMode(""); // reset safely
+    }
+  }, [approvalType]);
+
+
   const { mutate: createWorkflow, isLoading } = useCreateApprovalWorkflow();
 
   const handleSaveWorkflow = () => {
-  // --- basic validation ---
-  if (!module || !priority || !approvalType) {
-    toast.error("Module, Priority and Approval Type are required");
-    return;
-  }
+    // --- basic validation ---
+    if (!module || !priority || !approvalType) {
+      toast.error("Module, Priority and Approval Type are required");
+      return;
+    }
 
-  if (approvalType === "multiple" && !flowMode) {
-    toast.error("Flow mode is required for multiple approval");
-    return;
-  }
+    if (approvalType === "MULTIPLE" && !flowMode) {
+      toast.error("Flow mode is required for multiple approval");
+      return;
+    }
 
-  if (workflowScope === "DEPARTMENT" && !selectedDepartment) {
-    toast.error("Please select department");
-    return;
-  }
+    if (workflowScope === "DEPARTMENT" && !selectedDepartment) {
+      toast.error("Please select department");
+      return;
+    }
 
-  if (workflowScope === "EMPLOYEE" && !selectedEmployee) {
-    toast.error("Please select employee");
-    return;
-  }
+    if (workflowScope === "EMPLOYEE" && !selectedEmployee) {
+      toast.error("Please select employee");
+      return;
+    }
 
-  if (!steps.length) {
-    toast.error("At least one approval step is required");
-    return;
-  }
+    if (!steps.length) {
+      toast.error("At least one approval step is required");
+      return;
+    }
 
-  const payload = {
-    module,
-    priority,
-    description,
-    approvalType,
-    flowMode: approvalType === "multiple" ? flowMode : null,
-    autoEscalation,
+    const payload = {
+      module,
+      priority,
+      description,
+      approvalType,
+      flowMode: approvalType === "MULTIPLE" ? flowMode : null,
+      autoEscalation,
 
-    scope: workflowScope,
-    departmentId:
-      workflowScope === "DEPARTMENT"
-        ? Number(selectedDepartment)
-        : null,
-    employeeId:
-      workflowScope === "EMPLOYEE"
-        ? Number(selectedEmployee)
-        : null,
+      scope: workflowScope,
+      departmentId:
+        workflowScope === "DEPARTMENT"
+          ? Number(selectedDepartment)
+          : null,
+      employeeId:
+        workflowScope === "EMPLOYEE"
+          ? Number(selectedEmployee)
+          : null,
 
-    steps: steps.map((step, index) => ({
-      levelOrder: index + 1,
-      approverRoleId: Number(step.selectedRole),
-      approverEmployeeId: Number(step.selectedApprover),
-      authority: step.authority,
-      escalateAfterHours: autoEscalation
-        ? Number(step.escalateAfterHours || 0)
-        : null,
-    })),
+      steps: steps.map((step, index) => ({
+        levelOrder: index + 1,
+        approverRoleId: Number(step.selectedRole),
+        approverEmployeeId: Number(step.selectedApprover),
+        authority: step.authority,
+        escalateAfterHours: autoEscalation
+          ? Number(step.escalateAfterHours || 0)
+          : null,
+      })),
 
-    approvalActions: selectedApprovalActions,
-    rejectionActions: selectedRejectionActions,
+      approvalActions: selectedApprovalActions,
+      rejectionActions: selectedRejectionActions,
+    };
+
+    console.log("Saving workflow with payload:", payload);
+    return false;
+
+    createWorkflow(payload, {
+      onSuccess: () => {
+        toast.success("Approval workflow created successfully");
+      },
+      onError: (err) => {
+        console.error(err);
+        toast.error("Failed to create approval workflow");
+      },
+    });
+
+
   };
-
-   console.log("Saving workflow with payload:", payload);
-  return false;
-
-  createWorkflow(payload, {
-    onSuccess: () => {
-      toast.success("Approval workflow created successfully");
-    },
-    onError: (err) => {
-      console.error(err);
-      toast.error("Failed to create approval workflow");
-    },
-  });
-
- 
-};
 
 
 
@@ -274,11 +282,11 @@ const [flowMode, setFlowMode] = useState("");
           <div>
             <label className="font-medium text-sm">Description</label>
             <Textarea
-  value={description}
-  onChange={(e) => setDescription(e.target.value)}
-  placeholder="Describe workflow purpose..."
-  className="mt-1"
-/>
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Describe workflow purpose..."
+              className="mt-1"
+            />
 
           </div>
 
@@ -371,7 +379,7 @@ const [flowMode, setFlowMode] = useState("");
               </Select>
             </div>
 
-            {approvalType === "multiple" && (
+            {approvalType === "MULTIPLE" && (
               <div>
                 <label className="font-medium text-sm">Flow Mode</label>
                 <Select value={flowMode} onValueChange={setFlowMode}>
@@ -478,6 +486,26 @@ const [flowMode, setFlowMode] = useState("");
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {autoEscalation && (
+                    <div>
+                      <label className="font-medium text-sm">
+                        Escalate After (Hours)
+                      </label>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={step.escalateAfterHours}
+                        onChange={(e) =>
+                          updateStep(step.id, "escalateAfterHours", e.target.value)
+                        }
+                        placeholder="e.g. 24"
+                        className="mt-1"
+                      />
+                    </div>
+                  )}
+
+
                 </div>
               </div>
             ))}
@@ -504,9 +532,8 @@ const [flowMode, setFlowMode] = useState("");
                   <div
                     key={action.code}
                     onClick={() => toggleApprovalAction(action.code)}
-                    className={`cursor-pointer p-5 border rounded-xl shadow-sm hover:shadow-md transition-all ${
-                      active ? "bg-green-50 border-green-400" : "bg-white border"
-                    }`}
+                    className={`cursor-pointer p-5 border rounded-xl shadow-sm hover:shadow-md transition-all ${active ? "bg-green-50 border-green-400" : "bg-white border"
+                      }`}
                   >
                     <div className="flex justify-between">
                       <div>
@@ -517,9 +544,8 @@ const [flowMode, setFlowMode] = useState("");
                       </div>
                       {active && <CheckCircle className="h-6 w-6 text-green-600" />}
                     </div>
-                    <span className={`text-xs px-3 py-1 rounded-full mt-3 inline-block ${
-                      active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
-                    }`}>
+                    <span className={`text-xs px-3 py-1 rounded-full mt-3 inline-block ${active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
+                      }`}>
                       {action.description}
                     </span>
                   </div>
@@ -574,9 +600,8 @@ const [flowMode, setFlowMode] = useState("");
                   <div
                     key={action.code}
                     onClick={() => toggleRejectionAction(action.code)}
-                    className={`cursor-pointer p-5 border rounded-xl shadow-sm hover:shadow-md transition-all ${
-                      active ? "bg-red-50 border-red-400" : "bg-white border"
-                    }`}
+                    className={`cursor-pointer p-5 border rounded-xl shadow-sm hover:shadow-md transition-all ${active ? "bg-red-50 border-red-400" : "bg-white border"
+                      }`}
                   >
                     <div className="flex justify-between">
                       <div>
@@ -587,9 +612,8 @@ const [flowMode, setFlowMode] = useState("");
                       </div>
                       {active && <XCircle className="h-6 w-6 text-red-600" />}
                     </div>
-                    <span className={`text-xs px-3 py-1 rounded-full mt-3 inline-block ${
-                      active ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-600"
-                    }`}>
+                    <span className={`text-xs px-3 py-1 rounded-full mt-3 inline-block ${active ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-600"
+                      }`}>
                       {action.description}
                     </span>
                   </div>
@@ -625,13 +649,13 @@ const [flowMode, setFlowMode] = useState("");
 
           <div className="text-center pt-6">
             <Button
-  size="lg"
-  className="px-10"
-  onClick={handleSaveWorkflow}
-  disabled={isLoading}
->
-  {isLoading ? "Saving..." : "Save Workflow"}
-</Button>
+              size="lg"
+              className="px-10"
+              onClick={handleSaveWorkflow}
+              disabled={isLoading}
+            >
+              {isLoading ? "Saving..." : "Save Workflow"}
+            </Button>
 
           </div>
         </CardContent>
