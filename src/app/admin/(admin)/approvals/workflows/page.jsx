@@ -201,8 +201,8 @@ export default function ApprovalWorkflowPage() {
       rejectionActions: selectedRejectionActions,
     };
 
-    console.log("Saving workflow with payload:", payload);
-    return false;
+    // console.log("Saving workflow with payload:", payload);
+    // return false;
 
     createWorkflow(payload, {
       onSuccess: () => {

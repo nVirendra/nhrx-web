@@ -9,7 +9,7 @@ export const useApprovalWorkflows = (params = {}) => {
   return useQuery({
     queryKey: [...WORKFLOW_KEY, params],
     queryFn: async () => {
-      const res = await api.get("/api/v1/workflows", { params });
+      const res = await api.get("/api/v1/approvals/workflows", { params });
       return res.data.data;
     },
   });
@@ -21,7 +21,7 @@ export const useApprovalWorkflowById = (id) => {
     queryKey: [...WORKFLOW_KEY, id],
     enabled: !!id,
     queryFn: async () => {
-      const res = await api.get(`/api/v1/workflows/${id}`);
+      const res = await api.get(`/api/v1/approvals/workflows/${id}`);
       return res.data.data;
     },
   });
@@ -33,7 +33,7 @@ export const useCreateApprovalWorkflow = () => {
 
   return useMutation({
     mutationFn: async (payload) => {
-      const res = await api.post("/api/v1/workflows", payload);
+      const res = await api.post("/api/v1/approvals/workflows", payload);
       return res.data;
     },
     onSuccess: () => {
@@ -48,7 +48,7 @@ export const useUpdateApprovalWorkflow = () => {
 
   return useMutation({
     mutationFn: async ({ id, payload }) => {
-      const res = await api.put(`/api/v1/workflows/${id}`, payload);
+      const res = await api.put(`/api/v1/approvals/workflows/${id}`, payload);
       return res.data;
     },
     onSuccess: (_, { id }) => {
@@ -64,7 +64,7 @@ export const useToggleWorkflowStatus = () => {
 
   return useMutation({
     mutationFn: async (id) => {
-      const res = await api.patch(`/api/v1/workflows/${id}/status`);
+      const res = await api.patch(`/api/v1/approvals/workflows/${id}/status`);
       return res.data;
     },
     onSuccess: () => {
@@ -79,7 +79,7 @@ export const useDeleteApprovalWorkflow = () => {
 
   return useMutation({
     mutationFn: async (id) => {
-      const res = await api.delete(`/api/v1/workflows/${id}`);
+      const res = await api.delete(`/api/v1/approvals/workflows/${id}`);
       return res.data;
     },
     onSuccess: () => {
