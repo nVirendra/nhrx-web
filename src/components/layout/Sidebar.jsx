@@ -152,6 +152,7 @@ export default function Sidebar() {
       path: "/approvals/workflows",
       children: [
         { label: "Approval Flow", path: "/admin/approvals/workflows" },
+        { label: "Approval Module", path: "/admin/approvals/modules" },
       ],
     },
 

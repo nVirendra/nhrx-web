@@ -4,29 +4,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 /* ---------------- QUERY KEYS ---------------- */
 const WORKFLOW_KEY = ["approval-workflows"];
 
-/* ---------------- GET ALL WORKFLOWS ---------------- */
-export const useApprovalWorkflows = (params = {}) => {
-  return useQuery({
-    queryKey: [...WORKFLOW_KEY, params],
-    queryFn: async () => {
-      const res = await api.get("/api/v1/approvals/workflows", { params });
-      return res.data.data;
-    },
-  });
-};
-
-/* ---------------- GET WORKFLOW BY ID ---------------- */
-export const useApprovalWorkflowById = (id) => {
-  return useQuery({
-    queryKey: [...WORKFLOW_KEY, id],
-    enabled: !!id,
-    queryFn: async () => {
-      const res = await api.get(`/api/v1/approvals/workflows/${id}`);
-      return res.data.data;
-    },
-  });
-};
-
 /* ---------------- CREATE WORKFLOW ---------------- */
 export const useCreateApprovalWorkflow = () => {
   const queryClient = useQueryClient();
@@ -42,18 +19,13 @@ export const useCreateApprovalWorkflow = () => {
   });
 };
 
-/* ---------------- UPDATE WORKFLOW ---------------- */
-export const useUpdateApprovalWorkflow = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ id, payload }) => {
-      const res = await api.put(`/api/v1/approvals/workflows/${id}`, payload);
-      return res.data;
-    },
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: WORKFLOW_KEY });
-      queryClient.invalidateQueries({ queryKey: [...WORKFLOW_KEY, id] });
+/* ---------------- GET ALL WORKFLOWS ---------------- */
+export const useApprovalWorkflows = (params = {}) => {
+  return useQuery({
+    queryKey: [...WORKFLOW_KEY, params],
+    queryFn: async () => {
+      const res = await api.get("/api/v1/approvals/workflows", { params });
+      return res.data.data;
     },
   });
 };
@@ -87,3 +59,35 @@ export const useDeleteApprovalWorkflow = () => {
     },
   });
 };
+
+/* ---------------- GET WORKFLOW BY ID ---------------- */
+export const useApprovalWorkflowById = (id) => {
+  return useQuery({
+    queryKey: [...WORKFLOW_KEY, id],
+    enabled: !!id,
+    queryFn: async () => {
+      const res = await api.get(`/api/v1/approvals/workflows/${id}`);
+      return res.data.data;
+    },
+  });
+};
+
+
+
+/* ---------------- UPDATE WORKFLOW ---------------- */
+export const useUpdateApprovalWorkflow = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, payload }) => {
+      const res = await api.put(`/api/v1/approvals/workflows/${id}`, payload);
+      return res.data;
+    },
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: WORKFLOW_KEY });
+      queryClient.invalidateQueries({ queryKey: [...WORKFLOW_KEY, id] });
+    },
+  });
+};
+
+
