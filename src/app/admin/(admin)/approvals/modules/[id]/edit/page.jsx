@@ -27,7 +27,7 @@ export default function EditApprovalWorkflowPage() {
       {
         onSuccess: () => {
           toast.success("Workflow updated successfully");
-          router.push("/approvals/workflows");
+          router.push("/admin/approvals/modules");
         },
         onError: () => toast.error("Update failed"),
       }

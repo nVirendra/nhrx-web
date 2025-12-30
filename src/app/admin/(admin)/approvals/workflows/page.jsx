@@ -43,9 +43,14 @@ import { useDepartments } from "@/features/department/department.api";
 import { useEmployees } from "@/features/employee/employee.api";
 import { useGetRoles } from "@/features/role/role-v2.api";
 import { useCreateApprovalWorkflow } from "@/features/approval/approval-workflow.api";
-import { toast } from "sonner"; 
+import { toast } from "sonner";
 
-export default function ApprovalWorkflowPage() {
+export default function ApprovalWorkflowPage({
+  mode = "create",              // "create" | "edit"
+  workflowData = null,           // from GET /:id
+  onSubmit = null,               // edit submit handler
+  isSubmitting = false,
+}) {
 
   /* ---------------- MASTER DATA ---------------- */
   const { data: modules = [] } = useMastersByCategory("MODULE");
@@ -91,6 +96,55 @@ export default function ApprovalWorkflowPage() {
     setOpenEmployee(workflowScope === "EMPLOYEE");
   }, [workflowScope]);
 
+
+  useEffect(() => {
+    if (mode !== "edit" || !workflowData) return;
+
+    setModule(workflowData.moduleCode);
+    setPriority(workflowData.priorityCode);
+    setApprovalType(workflowData.approvalTypeCode);
+    setFlowMode(workflowData.flowModeCode || "");
+    setWorkflowScope(workflowData.scopeCode);
+
+    setDescription(workflowData.description || "");
+    setAutoEscalation(workflowData.autoEscalation);
+
+    setSelectedDepartment(
+      workflowData.departmentId ? String(workflowData.departmentId) : ""
+    );
+
+    // setSelectedEmployee(
+    //   workflowData.employeeId ? String(workflowData.employeeId) : ""
+    // );
+    if (workflowData.scopeCode !== "EMPLOYEE") return;
+  if (!allEmployees.length) return;
+
+  setSelectedEmployee(String(workflowData.employeeId));
+
+    setSteps(
+      workflowData.steps.map((step) => ({
+        id: step.id,
+        selectedRole: String(step.approverRoleId),
+        selectedApprover: String(step.approverEmployeeId),
+        authority: step.authorityCode,
+        escalateAfterHours: step.escalateAfterHours || "",
+      }))
+    );
+
+    setSelectedApprovalActions(
+      workflowData.actions
+        .filter((a) => a.triggerOn === "approval")
+        .map((a) => a.actionCode)
+    );
+
+    setSelectedRejectionActions(
+      workflowData.actions
+        .filter((a) => a.triggerOn === "rejection")
+        .map((a) => a.actionCode)
+    );
+  }, [mode, workflowData, allEmployees]);
+
+
   const [selectedApprovalActions, setSelectedApprovalActions] = useState([]);
   const [selectedRejectionActions, setSelectedRejectionActions] = useState([]);
 
@@ -134,7 +188,7 @@ export default function ApprovalWorkflowPage() {
 
 
   useEffect(() => {
-    if (approvalType !== "multiple") {
+    if (approvalType !== "MULTIPLE") {
       setFlowMode(""); // reset safely
     }
   }, [approvalType]);
@@ -204,6 +258,10 @@ export default function ApprovalWorkflowPage() {
     // console.log("Saving workflow with payload:", payload);
     // return false;
 
+    if (mode === "edit") {
+      onSubmit(payload);
+      return;
+    }
     createWorkflow(payload, {
       onSuccess: () => {
         toast.success("Approval workflow created successfully");
@@ -652,10 +710,13 @@ export default function ApprovalWorkflowPage() {
               size="lg"
               className="px-10"
               onClick={handleSaveWorkflow}
-              disabled={isLoading}
+              disabled={isLoading || isSubmitting}
             >
-              {isLoading ? "Saving..." : "Save Workflow"}
+              {mode === "edit"
+                ? isSubmitting ? "Updating..." : "Update Workflow"
+                : isLoading ? "Saving..." : "Save Workflow"}
             </Button>
+
 
           </div>
         </CardContent>
