@@ -20,9 +20,6 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/accordion";
-import { useCreateLeavePolicy } from "@/features/leave/leave-policy.api";
-import { useMastersByCategory } from "@/features/masters/master.api";
-import {toast} from "sonner";
 
 /* -------- Leave Labels -------- */
 const LEAVE_LABEL = {
@@ -34,14 +31,6 @@ const LEAVE_LABEL = {
 };
 
 const LeavePolicyPage = () => {
-
-  /* ---------------- MASTER DATA ---------------- */
-const { data: leaveTypesMaster = [] } = useMastersByCategory("LEAVE_TYPE");
-const { data: allocationCycles = [] } = useMastersByCategory("ALLOCATION_CYCLE");
-const { data: accrualBasisList = [] } = useMastersByCategory("ACCRUAL_BASIS");
-const { data: accrualMethods = [] } = useMastersByCategory("ACCRUAL_METHOD");
-const { data: applicableForList = [] } = useMastersByCategory("APPLICABLE_FOR");
-
   /* ================= POLICY LEVEL ================= */
   const [policyName, setPolicyName] = useState("");
 
