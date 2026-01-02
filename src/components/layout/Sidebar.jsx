@@ -98,6 +98,7 @@ export default function Sidebar() {
         { label: "Leave Requests", path: "/admin/leaves/requests" },
         { label: "Leave Approvals", path: "/admin/leaves/approvals" },
         { label: "Leave Policies", path: "/admin/leaves/policies" },
+        { label: "Leave  Policies All", path: "/admin/leaves/leave-policies" },
         { label: "Holiday Calendar", path: "/admin/leaves/holidays" },
         { label: "Leave Calendar", path: "/admin/leaves/calendar" },
       ],
