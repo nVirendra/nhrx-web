@@ -22,25 +22,21 @@ import {
 } from "@/components/ui/accordion";
 import { useCreateLeavePolicy } from "@/features/leave/leave-policy.api";
 import { useMastersByCategory } from "@/features/masters/master.api";
-import {toast} from "sonner";
+import { toast } from "sonner";
 
-/* -------- Leave Labels -------- */
-const LEAVE_LABEL = {
-  CL: "Casual Leave",
-  SL: "Sick Leave",
-  EL: "Earned Leave",
-  WFH: "Work From Home",
-  OD: "On Duty",
-};
+
 
 const LeavePolicyPage = () => {
 
   /* ---------------- MASTER DATA ---------------- */
-const { data: leaveTypesMaster = [] } = useMastersByCategory("LEAVE_TYPE");
-const { data: allocationCycles = [] } = useMastersByCategory("ALLOCATION_CYCLE");
-const { data: accrualBasisList = [] } = useMastersByCategory("ACCRUAL_BASIS");
-const { data: accrualMethods = [] } = useMastersByCategory("ACCRUAL_METHOD");
-const { data: applicableForList = [] } = useMastersByCategory("APPLICABLE_FOR");
+  const { data: leaveTypesMaster = [] } = useMastersByCategory("LEAVE_TYPE");
+  const { data: allocationCycles = [] } = useMastersByCategory("ALLOCATION_CYCLE");
+  const { data: accrualBasisList = [] } = useMastersByCategory("ACCRUAL_BASIS");
+  const { data: accrualMethods = [] } = useMastersByCategory("ACCRUAL_METHOD");
+  const { data: applicableForList = [] } = useMastersByCategory("APPLICABLE_FOR");
+
+  const { mutate: createLeavePolicy, isLoading } = useCreateLeavePolicy();
+
 
   /* ================= POLICY LEVEL ================= */
   const [policyName, setPolicyName] = useState("");
@@ -58,9 +54,9 @@ const { data: applicableForList = [] } = useMastersByCategory("APPLICABLE_FOR");
   const [leavePolicies, setLeavePolicies] = useState({
     CL: {
       allocation: 1,
-      allocationCycle: "monthly",
+      allocationCycle: "MONTHLY",
       accrualBasis: "TIME",
-      accrualMethod: "none",
+      accrualMethod: "NONE",
       accrualValue: 0,
       workingDaysThreshold: 0,
       isContinuous: false,
@@ -73,9 +69,9 @@ const { data: applicableForList = [] } = useMastersByCategory("APPLICABLE_FOR");
     },
     SL: {
       allocation: 6,
-      allocationCycle: "yearly",
+      allocationCycle: "YEARLY",
       accrualBasis: "TIME",
-      accrualMethod: "yearly",
+      accrualMethod: "YEARLY",
       accrualValue: 6,
       workingDaysThreshold: 0,
       isContinuous: false,
@@ -88,9 +84,9 @@ const { data: applicableForList = [] } = useMastersByCategory("APPLICABLE_FOR");
     },
     EL: {
       allocation: 12,
-      allocationCycle: "yearly",
+      allocationCycle: "YEARLY",
       accrualBasis: "WORKING_DAYS",
-      accrualMethod: "monthly",
+      accrualMethod: "MONTHLY",
       accrualValue: 1,
       workingDaysThreshold: 22,
       isContinuous: false,
@@ -103,9 +99,9 @@ const { data: applicableForList = [] } = useMastersByCategory("APPLICABLE_FOR");
     },
     WFH: {
       allocation: 0,
-      allocationCycle: "yearly",
+      allocationCycle: "YEARLY",
       accrualBasis: "TIME",
-      accrualMethod: "none",
+      accrualMethod: "NONE",
       accrualValue: 0,
       workingDaysThreshold: 0,
       isContinuous: false,
@@ -118,9 +114,9 @@ const { data: applicableForList = [] } = useMastersByCategory("APPLICABLE_FOR");
     },
     OD: {
       allocation: 0,
-      allocationCycle: "yearly",
+      allocationCycle: "YEARLY",
       accrualBasis: "TIME",
-      accrualMethod: "none",
+      accrualMethod: "NONE",
       accrualValue: 0,
       workingDaysThreshold: 0,
       isContinuous: false,
@@ -147,6 +143,66 @@ const { data: applicableForList = [] } = useMastersByCategory("APPLICABLE_FOR");
 
   const handlePolicyRuleChange = (key, value) => {
     setPolicyRules((prev) => ({ ...prev, [key]: value }));
+  };
+
+
+  const buildPayload = () => {
+    const leaveTypes = Object.entries(leavePolicies).map(
+      ([leaveType, config]) => ({
+        leaveType,
+
+        allocation: Number(config.allocation),
+        allocationCycle: config.allocationCycle,
+
+        accrualBasis: config.accrualBasis,
+        accrualMethod: config.accrualMethod,
+        accrualValue: Number(config.accrualValue),
+
+        workingDaysThreshold: Number(config.workingDaysThreshold || 0),
+        isContinuous: Boolean(config.isContinuous),
+
+        carryForward: Boolean(config.carryForward),
+        maxCarryForward: Number(config.maxCarryForward || 0),
+        encashment: Boolean(config.encashment),
+
+        sandwichRule: Boolean(config.sandwichRule),
+        attachmentRequiredDays: Number(config.attachmentRequiredDays || 0),
+
+        applicableFor: config.applicableFor
+      })
+    );
+
+    return {
+      policyName,
+      allowLOP: policyRules.allowLOP,
+      applyLimitEnabled: policyRules.applyLimitEnabled,
+      applyBeforeDays: policyRules.applyLimitEnabled
+        ? Number(policyRules.applyBeforeDays)
+        : 0,
+      applyAfterDays: policyRules.applyLimitEnabled
+        ? Number(policyRules.applyAfterDays)
+        : 0,
+      leaveTypes
+    };
+  };
+
+
+  const handleSubmit = () => {
+    if (!policyName.trim()) {
+      toast.error("Policy name is required");
+      return;
+    }
+
+    const payload = buildPayload();
+
+    createLeavePolicy(payload, {
+      onSuccess: () => {
+        toast.success("Leave policy created successfully");
+      },
+      onError: (err) => {
+        toast.error(err?.message || "Failed to create leave policy");
+      }
+    });
   };
 
   return (
@@ -217,10 +273,10 @@ const { data: applicableForList = [] } = useMastersByCategory("APPLICABLE_FOR");
         value={selectedLeaveType}
         onValueChange={(v) => v && setSelectedLeaveType(v)}
       >
-        {Object.keys(leavePolicies).map((leaveKey) => (
-          <AccordionItem key={leaveKey} value={leaveKey}>
+        {leaveTypesMaster.map((leave) => (
+          <AccordionItem key={leave.code} value={leave.code}>
             <AccordionTrigger className="text-lg font-semibold">
-              {LEAVE_LABEL[leaveKey]}
+              {leave.label}
             </AccordionTrigger>
 
             <AccordionContent className="space-y-8">
@@ -241,212 +297,227 @@ const { data: applicableForList = [] } = useMastersByCategory("APPLICABLE_FOR");
                   />
                   <Select
                     value={currentPolicy.allocationCycle}
-                    onValueChange={(v) =>
-                      handleLeaveChange("allocationCycle", v)
-                    }
+                    onValueChange={(v) => handleLeaveChange("allocationCycle", v)}
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Select Allocation Cycle" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                      <SelectItem value="yearly">Yearly</SelectItem>
+                      {allocationCycles.map((cycle) => (
+                        <SelectItem key={cycle.id} value={cycle.code}>
+                          {cycle.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
+
                 </CardContent>
               </Card>
 
-               {/* Accrual Policy (EXTENDED, NOT REPLACED) */}
-                               <Card>
-                                 <CardHeader>
-                                   <CardTitle>Accrual Policy</CardTitle>
-                                 </CardHeader>
-                         
-                                 <CardContent className="space-y-6">
-                                   {/* Accrual Basis */}
-                                   <div>
-                                     <Label>Accrual Basis</Label>
-                                     <Select
-                                       value={currentPolicy.accrualBasis}
-                                       onValueChange={(v) => handleLeaveChange("accrualBasis", v)}
-                                     >
-                                       <SelectTrigger>
-                                         <SelectValue />
-                                       </SelectTrigger>
-                                       <SelectContent>
-                                         <SelectItem value="TIME">Time Based</SelectItem>
-                                         <SelectItem value="WORKING_DAYS">Working Days Based</SelectItem>
-                                       </SelectContent>
-                                     </Select>
-                                   </div>
-                         
-                                   {/* Existing Time-Based Accrual (UNCHANGED) */}
-                                   {currentPolicy.accrualBasis === "TIME" && (
-                                     <div className="grid md:grid-cols-2 gap-6">
-                                       <div>
-                                         <Label>Accrual Type</Label>
-                                         <Select
-                                           value={currentPolicy.accrualMethod}
-                                           onValueChange={(v) =>
-                                             handleLeaveChange("accrualMethod", v)
-                                           }
-                                         >
-                                           <SelectTrigger>
-                                             <SelectValue />
-                                           </SelectTrigger>
-                                           <SelectContent>
-                                             <SelectItem value="monthly">Monthly</SelectItem>
-                                             <SelectItem value="yearly">Yearly</SelectItem>
-                                             <SelectItem value="none">No Accrual</SelectItem>
-                                           </SelectContent>
-                                         </Select>
-                                       </div>
-                         
-                                       <div>
-                                         <Label>Accrual Value</Label>
-                                         <Input
-                                           type="number"
-                                           disabled={currentPolicy.accrualMethod === "none"}
-                                           value={currentPolicy.accrualValue}
-                                           onChange={(e) =>
-                                             handleLeaveChange("accrualValue", e.target.value)
-                                           }
-                                         />
-                                       </div>
-                                     </div>
-                                   )}
-                         
-                                   {/* NEW: Working Days Based Accrual */}
-                                   {currentPolicy.accrualBasis === "WORKING_DAYS" && (
-                                     <>
-                                       <div>
-                                         <Label>Working Days Required for Accrual</Label>
-                                         <Input
-                                           type="number"
-                                           value={currentPolicy.workingDaysThreshold}
-                                           onChange={(e) =>
-                                             handleLeaveChange("workingDaysThreshold", e.target.value)
-                                           }
-                                         />
-                                         <p className="text-xs text-muted-foreground mt-1">
-                                           Example: 22 working days = 1 EL
-                                         </p>
-                                       </div>
-                         
-                                       <div className="flex items-center justify-between border p-3 rounded-lg">
-                                         <Label>Continuous Working Days</Label>
-                                         <Switch
-                                           checked={currentPolicy.isContinuous}
-                                           onCheckedChange={(v) =>
-                                             handleLeaveChange("isContinuous", v)
-                                           }
-                                         />
-                                       </div>
-                                     </>
-                                   )}
-                                 </CardContent>
-                               </Card>
-                    
-                          {/* Carry Forward & Encashment */}
-                          <Card>
-                            <CardHeader>
-                              <CardTitle>Carry Forward & Encashment</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-6">
-                              <div className="flex items-center justify-between border p-3 rounded-lg">
-                                <Label>Allow Carry Forward</Label>
-                                <Switch
-                                  checked={currentPolicy.carryForward}
-                                  onCheckedChange={(v) =>
-                                    handleLeaveChange("carryForward", v)
-                                  }
-                                />
-                              </div>
-                    
-                              {currentPolicy.carryForward && (
-                                <div>
-                                  <Label>Max Carry Forward</Label>
-                                  <Input
-                                    type="number"
-                                    value={currentPolicy.maxCarryForward}
-                                    onChange={(e) =>
-                                      handleLeaveChange("maxCarryForward", e.target.value)
-                                    }
-                                  />
-                                </div>
-                              )}
-                    
-                              <Separator />
-                    
-                              <div className="flex items-center justify-between border p-3 rounded-lg">
-                                <Label>Allow Encashment</Label>
-                                <Switch
-                                  checked={currentPolicy.encashment}
-                                  onCheckedChange={(v) =>
-                                    handleLeaveChange("encashment", v)
-                                  }
-                                />
-                              </div>
-                            </CardContent>
-                          </Card>
-                    
-                          {/* Leave Rules */}
-                          <Card>
-                            <CardHeader>
-                              <CardTitle>Leave Rules & Restrictions</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-6">
+              {/* Accrual Policy (EXTENDED, NOT REPLACED) */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Accrual Policy</CardTitle>
+                </CardHeader>
 
-                              {/* Gender Applicability */}
-          <div>
-            <Label>Leave Applicable For</Label>
-            <Select
-              value={currentPolicy.applicableFor}
-              onValueChange={(v) =>
-                handleLeaveChange("applicableFor", v)
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All</SelectItem>
-                <SelectItem value="MALE">Male</SelectItem>
-                <SelectItem value="FEMALE">Female</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-                              <div className="flex items-center justify-between border p-3 rounded-lg">
-                                <Label>Apply Sandwich Rule</Label>
-                                <Switch
-                                  checked={currentPolicy.sandwichRule}
-                                  onCheckedChange={(v) =>
-                                    handleLeaveChange("sandwichRule", v)
-                                  }
-                                />
-                              </div>
-                    
-                              <div>
-                                <Label>Attachment Required After (Days)</Label>
-                                <Input
-                                  type="number"
-                                  value={currentPolicy.attachmentRequiredDays}
-                                  onChange={(e) =>
-                                    handleLeaveChange("attachmentRequiredDays", e.target.value)
-                                  }
-                                />
-                              </div>
-                    
-                             
-                            </CardContent>
-                          </Card>
+                <CardContent className="space-y-6">
+                  {/* Accrual Basis */}
+                  <div>
+                    <Label>Accrual Basis</Label>
+                    <Select
+                      value={currentPolicy.accrualBasis}
+                      onValueChange={(v) => handleLeaveChange("accrualBasis", v)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Accrual Basis" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {accrualBasisList.map((basis) => (
+                          <SelectItem key={basis.id} value={basis.code}>
+                            {basis.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                  </div>
+
+                  {/* Existing Time-Based Accrual (UNCHANGED) */}
+                  {currentPolicy.accrualBasis === "TIME" && (
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div>
+                        <Label>Accrual Type</Label>
+                        <Select
+                          value={currentPolicy.accrualMethod}
+                          onValueChange={(v) => handleLeaveChange("accrualMethod", v)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select Accrual Method" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {accrualMethods.map((method) => (
+                              <SelectItem key={method.id} value={method.code}>
+                                {method.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+
+                      </div>
+
+                      <div>
+                        <Label>Accrual Value</Label>
+                        <Input
+                          type="number"
+                          disabled={currentPolicy.accrualMethod === "NONE"}
+                          value={currentPolicy.accrualValue}
+                          onChange={(e) =>
+                            handleLeaveChange("accrualValue", e.target.value)
+                          }
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* NEW: Working Days Based Accrual */}
+                  {currentPolicy.accrualBasis === "WORKING_DAYS" && (
+                    <>
+                      <div>
+                        <Label>Working Days Required for Accrual</Label>
+                        <Input
+                          type="number"
+                          value={currentPolicy.workingDaysThreshold}
+                          onChange={(e) =>
+                            handleLeaveChange("workingDaysThreshold", e.target.value)
+                          }
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Example: 22 working days = 1 EL
+                        </p>
+                      </div>
+
+                      <div className="flex items-center justify-between border p-3 rounded-lg">
+                        <Label>Continuous Working Days</Label>
+                        <Switch
+                          checked={currentPolicy.isContinuous}
+                          onCheckedChange={(v) =>
+                            handleLeaveChange("isContinuous", v)
+                          }
+                        />
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Carry Forward & Encashment */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Carry Forward & Encashment</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex items-center justify-between border p-3 rounded-lg">
+                    <Label>Allow Carry Forward</Label>
+                    <Switch
+                      checked={currentPolicy.carryForward}
+                      onCheckedChange={(v) =>
+                        handleLeaveChange("carryForward", v)
+                      }
+                    />
+                  </div>
+
+                  {currentPolicy.carryForward && (
+                    <div>
+                      <Label>Max Carry Forward</Label>
+                      <Input
+                        type="number"
+                        value={currentPolicy.maxCarryForward}
+                        onChange={(e) =>
+                          handleLeaveChange("maxCarryForward", e.target.value)
+                        }
+                      />
+                    </div>
+                  )}
+
+                  <Separator />
+
+                  <div className="flex items-center justify-between border p-3 rounded-lg">
+                    <Label>Allow Encashment</Label>
+                    <Switch
+                      checked={currentPolicy.encashment}
+                      onCheckedChange={(v) =>
+                        handleLeaveChange("encashment", v)
+                      }
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Leave Rules */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Leave Rules & Restrictions</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+
+                  {/* Gender Applicability */}
+                  <div>
+                    <Label>Leave Applicable For</Label>
+                    <Select
+                      value={currentPolicy.applicableFor}
+                      onValueChange={(v) => handleLeaveChange("applicableFor", v)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Applicable For" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {applicableForList.map((item) => (
+                          <SelectItem key={item.id} value={item.code}>
+                            {item.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                  </div>
+                  <div className="flex items-center justify-between border p-3 rounded-lg">
+                    <Label>Apply Sandwich Rule</Label>
+                    <Switch
+                      checked={currentPolicy.sandwichRule}
+                      onCheckedChange={(v) =>
+                        handleLeaveChange("sandwichRule", v)
+                      }
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Attachment Required After (Days)</Label>
+                    <Input
+                      type="number"
+                      value={currentPolicy.attachmentRequiredDays}
+                      onChange={(e) =>
+                        handleLeaveChange("attachmentRequiredDays", e.target.value)
+                      }
+                    />
+                  </div>
+
+
+                </CardContent>
+              </Card>
             </AccordionContent>
           </AccordionItem>
         ))}
       </Accordion>
 
       <div className="flex justify-end">
-        <Button size="lg">Save Leave Policy</Button>
+        <Button
+          size="lg"
+          onClick={handleSubmit}
+          disabled={isLoading}
+        >
+          {isLoading ? "Saving..." : "Save Leave Policy"}
+        </Button>
+
       </div>
     </div>
   );
