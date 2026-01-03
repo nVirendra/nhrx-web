@@ -2,53 +2,40 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
-
-import LeavePolicyPage from "@/components/leave/LeavePolicyPage";
-
+import LeavePolicyForm from "../../components/LeavePolicyForm";
 import {
   useLeavePolicyById,
-  useCreateLeavePolicy,
   useUpdateLeavePolicy,
 } from "@/features/leave/leave-policy.api";
 
-const LeavePolicyFormPage = () => {
+export default function EditLeavePolicyPage() {
   const { id } = useParams();
   const router = useRouter();
-  const isEdit = Boolean(id);
 
   const { data, isLoading } = useLeavePolicyById(id);
-  const { mutate: createPolicy } = useCreateLeavePolicy();
-  const { mutate: updatePolicy } = useUpdateLeavePolicy();
+  const { mutate } = useUpdateLeavePolicy();
 
-  
+  if (!data && !isLoading) {
+    return <p className="p-6">Policy not found</p>;
+  }
 
-  const handleSubmit = useCallback((payload) => {
-    if (isEdit  && updatePolicy) {
-      updatePolicy({ id, payload }, {
+  const handleSubmit = (payload) => {
+    mutate(
+      { id, payload },
+      {
         onSuccess: () => {
           toast.success("Policy updated");
           router.push("/admin/leaves/leave-policies");
         },
-      });
-    } else if (createPolicy) {
-      createPolicy(payload, {
-        onSuccess: () => {
-          toast.success("Policy created");
-          router.push("/admin/leaves/leave-policies");
-        },
-      });
-    }
-  });
-
-  if (isEdit && isLoading) return null;
+      }
+    );
+  };
 
   return (
-    <LeavePolicyPage
-      mode={isEdit ? "edit" : "create"}
+    <LeavePolicyForm
+      mode="edit"
       initialData={data}
       onSubmit={handleSubmit}
     />
   );
-};
-
-export default LeavePolicyFormPage;
+}

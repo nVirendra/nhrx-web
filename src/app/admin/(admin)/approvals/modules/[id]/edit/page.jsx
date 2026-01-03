@@ -2,7 +2,6 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useEffect } from "react";
 
 import {
   useApprovalWorkflowById,
