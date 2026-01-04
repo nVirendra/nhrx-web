@@ -75,6 +75,7 @@ export default function Sidebar() {
         { label: "Departments", path: "/admin/employees/departments" },
         { label: "Designations", path: "/admin/employees/designations" },
         { label: "Grade", path: "/admin/employees/grades" },
+        { label: "Employee Shift Assignment", path: "/admin/employees/2/shifts" }
       ],
     },
 
@@ -86,7 +87,9 @@ export default function Sidebar() {
         { label: "Daily Attendance", path: "/admin/attendance/daily" },
         { label: "Monthly Report", path: "/admin/attendance/monthly" },
         { label: "Shifts & Policies", path: "/admin/attendance/shifts" },
+         { label: "Shifts 1", path: "/admin/attendance/shifts-1" },
         { label: "Regularization", path: "/admin/attendance/regularization" },
+        { label: "Attendance Preview", path: "/admin/attendance/preview" },
       ],
     },
 

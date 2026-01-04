@@ -171,120 +171,220 @@ const ShiftPolicyPage = () => {
 
       {/* ATTENDANCE POLICY SECTION */}
       <Card>
-        <CardHeader>
-          <CardTitle>Attendance Rules & Policies</CardTitle>
-        </CardHeader>
+  <CardHeader>
+    <CardTitle>Attendance Rules & Policies</CardTitle>
+  </CardHeader>
 
-        <CardContent className="space-y-8">
-          {/* GRACE TIME */}
-          <div className="space-y-2">
-            <Label>Grace Time (Minutes)</Label>
-            <Input placeholder="Example: 10" type="number" />
-            <p className="text-sm text-muted-foreground">
-              Employees arriving within grace time will not receive a late mark.
-            </p>
-          </div>
+  <CardContent className="space-y-10">
 
-          {/* LATE MARK POLICIES */}
-          <div className="space-y-3">
-            <Label className="font-semibold">Late Mark Rules</Label>
+    {/* ================= GRACE TIME ================= */}
+    <div className="space-y-2">
+      <Label>Grace In Time (Minutes)</Label>
+      <Input type="number" placeholder="Example: 10" />
+      <p className="text-sm text-muted-foreground">
+        Late mark will not be applied if employee arrives within grace time.
+      </p>
+    </div>
 
-            <div className="flex items-center justify-between border p-3 rounded-lg">
-              <div>
-                <p className="font-medium">Enable Late Marks</p>
-                <p className="text-sm text-muted-foreground">
-                  Late arrival beyond grace time counts as a late mark.
-                </p>
-              </div>
-              <Switch />
-            </div>
+    <div className="space-y-2">
+      <Label>Grace Out Time (Minutes)</Label>
+      <Input type="number" placeholder="Example: 5" />
+    </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>No. of Late Marks for Half-Day</Label>
-                <Input placeholder="3" type="number" />
-              </div>
+    {/* ================= PUNCH WINDOW RULES ================= */}
+    <div className="space-y-4">
+      <Label className="font-semibold">Punch Window Rules</Label>
 
-              <div>
-                <Label>No. of Late Marks for 1 Absent</Label>
-                <Input placeholder="6" type="number" />
-              </div>
-            </div>
-          </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label>Punch-In Minute Window</Label>
+          <Input type="number" placeholder="Example: 30" />
+          <p className="text-xs text-muted-foreground">
+            Allowed minutes before/after shift start for valid IN punch.
+          </p>
+        </div>
 
-          {/* HALF-DAY RULE */}
-          <div className="flex items-center justify-between border p-3 rounded-lg">
-            <div>
-              <Label>Enable Half-Day Policy</Label>
-              <p className="text-sm text-muted-foreground">
-                Automatically mark half-day if minimum working hours not met.
-              </p>
-            </div>
-            <Switch />
-          </div>
+        <div>
+          <Label>Checkout After (Minutes)</Label>
+          <Input type="number" placeholder="Example: 240" />
+          <p className="text-xs text-muted-foreground">
+            OUT punch before this time will be ignored.
+          </p>
+        </div>
+      </div>
+    </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Minimum Hours for Half-Day</Label>
-              <Input placeholder="4.5" type="number" />
-            </div>
+    {/* ================= LATE MARK RULES ================= */}
+    <div className="space-y-4">
+      <Label className="font-semibold">Late Mark Rules</Label>
 
-            <div>
-              <Label>Minimum Hours for Full-Day</Label>
-              <Input placeholder="8" type="number" />
-            </div>
-          </div>
+      <div className="flex items-center justify-between border p-3 rounded-lg">
+        <div>
+          <p className="font-medium">Enable Late Marks</p>
+          <p className="text-sm text-muted-foreground">
+            Late arrival beyond grace time counts as late mark.
+          </p>
+        </div>
+        <Switch />
+      </div>
 
-          {/* OVERTIME POLICIES */}
-          <div className="space-y-3">
-            <Label className="font-semibold">Overtime Policy</Label>
+      <div className="grid grid-cols-3 gap-4">
+        <div>
+          <Label>Late After (Minutes)</Label>
+          <Input type="number" placeholder="Example: 15" />
+        </div>
 
-            <div className="flex items-center justify-between border p-3 rounded-lg">
-              <div>
-                <p className="font-medium">Allow Overtime</p>
-                <p className="text-sm text-muted-foreground">
-                  Overtime will be calculated beyond shift hours.
-                </p>
-              </div>
-              <Switch />
-            </div>
+        <div>
+          <Label>Late Marks → Half-Day</Label>
+          <Input type="number" placeholder="3" />
+        </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Minimum OT (Minutes)</Label>
-                <Input placeholder="30" type="number" />
-              </div>
+        <div>
+          <Label>Late Marks → Absent</Label>
+          <Input type="number" placeholder="6" />
+        </div>
+      </div>
+    </div>
 
-              <div>
-                <Label>Maximum OT Per Day (Hours)</Label>
-                <Input placeholder="2" type="number" />
-              </div>
-            </div>
-          </div>
+    {/* ================= HALF DAY RULE ================= */}
+    <div className="space-y-4">
+      <div className="flex items-center justify-between border p-3 rounded-lg">
+        <div>
+          <Label>Enable Half-Day Policy</Label>
+          <p className="text-sm text-muted-foreground">
+            Half-day if minimum working hours not met.
+          </p>
+        </div>
+        <Switch />
+      </div>
 
-          {/* AUTO ABSENT RULE */}
-          <div className="flex items-center justify-between border p-3 rounded-lg">
-            <div>
-              <Label>Auto Mark Absent</Label>
-              <p className="text-sm text-muted-foreground">
-                Auto-absent if IN punch is missing.
-              </p>
-            </div>
-            <Switch />
-          </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label>Minimum Minutes for Half-Day</Label>
+          <Input type="number" placeholder="270 (4.5 hrs)" />
+        </div>
 
-          {/* WEEKOFF RULE */}
+        <div>
+          <Label>Minimum Minutes for Full-Day</Label>
+          <Input type="number" placeholder="480 (8 hrs)" />
+        </div>
+      </div>
+    </div>
+
+    {/* ================= OVERTIME RULES ================= */}
+    <div className="space-y-4">
+      <Label className="font-semibold">Overtime Policy</Label>
+
+      <div className="flex items-center justify-between border p-3 rounded-lg">
+        <div>
+          <p className="font-medium">Allow Overtime</p>
+          <p className="text-sm text-muted-foreground">
+            Calculate OT beyond shift working hours.
+          </p>
+        </div>
+        <Switch />
+      </div>
+
+      <div className="grid grid-cols-3 gap-4">
+        <div>
+          <Label>OT After (Minutes)</Label>
+          <Input type="number" placeholder="30" />
+        </div>
+
+        <div>
+          <Label>Minimum OT (Minutes)</Label>
+          <Input type="number" placeholder="30" />
+        </div>
+
+        <div>
+          <Label>Max OT Per Day (Minutes)</Label>
+          <Input type="number" placeholder="120" />
+        </div>
+      </div>
+    </div>
+
+    {/* ================= AUTO ABSENT ================= */}
+    <div className="flex items-center justify-between border p-3 rounded-lg">
+      <div>
+        <Label>Auto Mark Absent</Label>
+        <p className="text-sm text-muted-foreground">
+          Mark absent if no IN punch exists.
+        </p>
+      </div>
+      <Switch />
+    </div>
+
+    {/* ================= WEEKOFF ================= */}
+    <div className="space-y-2">
+      <Label>Weekoff Type</Label>
+      <select className="border rounded-md p-2 w-full">
+        <option value="FIXED">Fixed</option>
+        <option value="FLEXIBLE">Flexible</option>
+        <option value="ROTATIONAL">Rotational</option>
+      </select>
+    </div>
+
+    <div className="space-y-2">
+      <Label>Weekoff Days</Label>
+      <div className="flex flex-wrap gap-3">
+        {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d => (
+          <label key={d} className="flex items-center gap-2">
+            <input type="checkbox" /> {d}
+          </label>
+        ))}
+      </div>
+    </div>
+
+    {/* ================= WEEKDAY PARTIAL DAY RULES ================= */}
+    <div className="space-y-4 border-t pt-6">
+      <Label className="font-semibold">Weekday Partial Day Rules</Label>
+
+      {/* ONE RULE ROW (repeatable) */}
+      <div className="border rounded-lg p-4 space-y-4">
+        <div className="grid grid-cols-4 gap-4">
           <div>
-            <Label>Weekoff Days</Label>
+            <Label>Day</Label>
             <select className="border rounded-md p-2 w-full">
-              <option>Saturday & Sunday</option>
-              <option>Sunday</option>
               <option>Friday</option>
-              <option>Flexible Weekoff</option>
+              <option>Saturday</option>
             </select>
           </div>
-        </CardContent>
-      </Card>
+
+          <div>
+            <Label>Begins At</Label>
+            <Input type="time" />
+          </div>
+
+          <div>
+            <Label>Ends At</Label>
+            <Input type="time" />
+          </div>
+
+          <div>
+            <Label>Attendance Credit</Label>
+            <select className="border rounded-md p-2 w-full">
+              <option>FULL_DAY</option>
+              <option>HALF_DAY</option>
+              <option>PRESENT</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="flex gap-4">
+          {["1st","2nd","3rd","4th","5th"].map(o => (
+            <label key={o} className="flex items-center gap-2">
+              <input type="checkbox" /> {o}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <Button variant="outline">+ Add Partial Day Rule</Button>
+    </div>
+
+  </CardContent>
+</Card>
+
     </div>
   );
 };
