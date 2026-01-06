@@ -23,20 +23,28 @@ import {
 import { Plus, Trash2, Settings } from "lucide-react";
 
 import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-  SelectValue,
+    Select,
+    SelectTrigger,
+    SelectContent,
+    SelectItem,
+    SelectValue,
 } from "@/components/ui/select";
 
+
+import FixedShiftForm from "../shifts/components/FixedShiftForm";
+import FlexibleShiftForm from "../shifts/components/FlexibleShiftForm";
+import RotationShiftForm from "../shifts/components/RotationShiftForm";
+
 export const dynamic = "force-dynamic";
+
 
 /* ---------------- DUMMY DATA ---------------- */
 const defaultShifts = [
     { id: "1", name: "General Shift", start: "09:00", end: "18:00", type: "fixed", isActive: true },
     { id: "2", name: "Morning Shift", start: "07:00", end: "15:00", type: "fixed", isActive: true },
 ];
+
+
 
 export default function ShiftListPage() {
     const router = useRouter();
@@ -51,50 +59,93 @@ export default function ShiftListPage() {
         breakMinutes: 60
     });
 
+    const [flexibleShiftForm, setFlexibleShiftForm] = useState({
+        name: "",
+        minHours: 8,
+        maxHours: 10,
+    });
+
+    const saveFlexibleShift = () => {
+  if (!flexibleShiftForm.name) return;
+
+  const newShiftId = Date.now().toString();
+
+  const newShift = {
+    id: newShiftId,
+    ...flexibleShiftForm,
+    type: "flexible",
+    isActive: true,
+  };
+
+  setShifts((prev) => [...prev, newShift]);
+
+  // ✅ NAVIGATE TO SETTINGS PAGE
+  router.push(`/admin/attendance/shifts/${newShiftId}`);
+};
+
+
+
     // Rotation State for Add Dialog
-      const [rotationState, setRotationState] = useState({
+    const [rotationState, setRotationState] = useState({
         rotationName: "",
         rotationCode: "",
         cycleDays: 3,
         dayShiftMap: {},
         isActive: true
-      });
+    });
 
-        const updateRotationDay = useCallback((day, shiftId) => {
-          setRotationState(r => ({
+    const updateRotationDay = useCallback((day, shiftId) => {
+        setRotationState(r => ({
             ...r,
             dayShiftMap: { ...r.dayShiftMap, [day]: shiftId }
-          }));
-        }, []);
-      
-        const handleRotationNameChange = (e) => {
-          setRotationState(r => ({ ...r, rotationName: e.target.value }));
-        };
-      
-        const handleRotationCodeChange = (e) => {
-          setRotationState(r => ({ ...r, rotationCode: e.target.value }));
-        };
-      
-        const handleRotationCycleChange = (e) => {
-          const cycleDays = Number(e.target.value);
-          setRotationState(r => ({
+        }));
+    }, []);
+
+    const handleRotationNameChange = (e) => {
+        setRotationState(r => ({ ...r, rotationName: e.target.value }));
+    };
+
+    const handleRotationCodeChange = (e) => {
+        setRotationState(r => ({ ...r, rotationCode: e.target.value }));
+    };
+
+    const handleRotationCycleChange = (e) => {
+        const cycleDays = Number(e.target.value);
+        setRotationState(r => ({
             ...r,
             cycleDays,
             dayShiftMap: {}
-          }));
-        };
-      
-        const saveRotationShift = () => {
-          setShifts([...shifts, {
-            id: Date.now(),
-            ...rotationState,
-            type: "rotational",
-            isActive: true
-          }]);
-          setRotationState({ rotationName: "", rotationCode: "", cycleDays: 3, dayShiftMap: {}, isActive: true });
-        };
+        }));
+    };
 
-        
+    const saveRotationShift = () => {
+  if (!rotationState.rotationName || !rotationState.rotationCode) return;
+
+  const newShiftId = Date.now().toString();
+
+  const newShift = {
+    id: newShiftId,
+    ...rotationState,
+    type: "rotational",
+    isActive: true,
+  };
+
+  setShifts((prev) => [...prev, newShift]);
+
+  setRotationState({
+    rotationName: "",
+    rotationCode: "",
+    cycleDays: 3,
+    dayShiftMap: {},
+    isActive: true,
+  });
+
+  // ✅ NAVIGATE TO SETTINGS PAGE
+  router.push(`/admin/attendance/shifts/${newShiftId}`);
+};
+
+
+
     /* ---------------- SAVE SHIFT ---------------- */
     const saveFixedShift = () => {
         if (!fixedShiftForm.name || !fixedShiftForm.start || !fixedShiftForm.end) return;
@@ -148,110 +199,36 @@ export default function ShiftListPage() {
                                     </TabsList>
 
                                     {/* FIXED SHIFT */}
-                                    <TabsContent value="fixed" className="space-y-4 mt-4">
-                                        <div>
-                                            <Label>Shift Name</Label>
-                                            <Input
-                                                value={fixedShiftForm.name}
-                                                onChange={e => setFixedShiftForm({ ...fixedShiftForm, name: e.target.value })}
-                                            />
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <Input
-                                                type="time"
-                                                onChange={e => setFixedShiftForm({ ...fixedShiftForm, start: e.target.value })}
-                                            />
-                                            <Input
-                                                type="time"
-                                                onChange={e => setFixedShiftForm({ ...fixedShiftForm, end: e.target.value })}
-                                            />
-                                        </div>
-
-                                        <Button className="w-full" onClick={saveFixedShift}>
-                                            Save & Configure Attendance Rules
-                                        </Button>
+                                    <TabsContent value="fixed">
+                                        <FixedShiftForm
+                                            value={fixedShiftForm}
+                                            onChange={setFixedShiftForm}
+                                            onSubmit={saveFixedShift}
+                                        />
                                     </TabsContent>
 
+
                                     {/* Flexible Shift Form */}
-                                    <TabsContent value="flexible" className="space-y-4 mt-4">
-                                        <div>
-                                            <Label>Shift Name</Label>
-                                            <Input placeholder="Flexible Shift" />
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <Label>Min Work Hours</Label>
-                                                <Input type="number" placeholder="8" />
-                                            </div>
-                                            <div>
-                                                <Label>Max Work Hours</Label>
-                                                <Input type="number" placeholder="10" />
-                                            </div>
-                                        </div>
-                                        <Button className="w-full">Save Flexible Shift</Button>
+                                    <TabsContent value="flexible">
+                                        <FlexibleShiftForm
+                                            value={flexibleShiftForm}
+                                            onChange={setFlexibleShiftForm}
+                                            onSubmit={saveFlexibleShift}
+                                        />
                                     </TabsContent>
 
                                     {/* Rotation Shift Form */}
-                                    <TabsContent value="rotation" className="space-y-6 mt-4">
-                                        <div className="grid md:grid-cols-2 gap-4">
-                                            <div>
-                                                <Label>Rotation Name</Label>
-                                                <Input
-                                                    value={rotationState.rotationName}
-                                                    onChange={handleRotationNameChange}
-                                                    placeholder="3 Day Shift Rotation"
-                                                />
-                                            </div>
-                                            <div>
-                                                <Label>Rotation Code</Label>
-                                                <Input
-                                                    value={rotationState.rotationCode}
-                                                    onChange={handleRotationCodeChange}
-                                                    placeholder="ROT_3DAY"
-                                                />
-                                            </div>
-                                            <div>
-                                                <Label>Cycle Days</Label>
-                                                <Input
-                                                    type="number"
-                                                    min={1}
-                                                    value={rotationState.cycleDays}
-                                                    onChange={handleRotationCycleChange}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-4">
-                                            <h4 className="font-semibold">Day-wise Shift Assignment</h4>
-                                            {Array.from({ length: rotationState.cycleDays }).map((_, i) => {
-                                                const day = i + 1;
-                                                return (
-                                                    <div key={day} className="flex items-center gap-4 p-3 border rounded-lg">
-                                                        <div className="w-20 font-medium">Day {day}</div>
-                                                        <Select
-                                                            value={rotationState.dayShiftMap[day] || ""}
-                                                            onValueChange={(v) => updateRotationDay(day, v)}
-                                                        >
-                                                            <SelectTrigger className="w-64">
-                                                                <SelectValue placeholder="Assign shift" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                {shifts.map(s => (
-                                                                    <SelectItem key={s.id} value={s.id.toString()}>
-                                                                        {s.name} ({s.type})
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-
-                                        <Button className="w-full" onClick={saveRotationShift}>
-                                            Save Rotation Shift
-                                        </Button>
+                                    {/* ROTATION */}
+                                    <TabsContent value="rotation">
+                                        <RotationShiftForm
+                                            value={rotationState}
+                                            shifts={shifts}
+                                            onNameChange={handleRotationNameChange}
+                                            onCodeChange={handleRotationCodeChange}
+                                            onCycleChange={handleRotationCycleChange}
+                                            onDayAssign={updateRotationDay}
+                                            onSubmit={saveRotationShift}
+                                        />
                                     </TabsContent>
                                 </Tabs>
                             </DialogContent>

@@ -86,7 +86,7 @@ export default function Sidebar() {
       children: [
         { label: "Daily Attendance", path: "/admin/attendance/daily" },
         { label: "Monthly Report", path: "/admin/attendance/monthly" },
-        { label: "Shifts & Policies", path: "/admin/attendance/shift" },
+        { label: "Shifts & Policies", path: "/admin/attendance/shifts" },
         { label: "Regularization", path: "/admin/attendance/regularization" },
         { label: "Attendance Preview", path: "/admin/attendance/preview" },
       ],
