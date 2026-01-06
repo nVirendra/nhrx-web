@@ -1,392 +1,312 @@
 "use client";
-import React, { useState } from "react";
 
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import React, { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
+
+import {
+    Card, CardHeader, CardTitle, CardContent
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+    Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger
+} from "@/components/ui/dialog";
+import {
+    Table, TableHeader, TableRow, TableHead, TableBody, TableCell
+} from "@/components/ui/table";
+import {
+    Tabs, TabsList, TabsTrigger, TabsContent
+} from "@/components/ui/tabs";
+import { Plus, Trash2, Settings } from "lucide-react";
 
 import {
-  Table,
-  TableHeader,
-  TableRow,
-  TableHead,
-  TableBody,
-  TableCell,
-} from "@/components/ui/table";
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
 
-import { Plus } from "lucide-react";
+export const dynamic = "force-dynamic";
 
-// Dummy Shifts
+/* ---------------- DUMMY DATA ---------------- */
 const defaultShifts = [
-  {
-    id: 1,
-    name: "General Shift",
-    start: "09:00",
-    end: "18:00",
-    type: "Fixed",
-  },
-  {
-    id: 2,
-    name: "Morning Shift",
-    start: "07:00",
-    end: "15:00",
-    type: "Fixed",
-  },
-  {
-    id: 3,
-    name: "Night Shift",
-    start: "22:00",
-    end: "06:00",
-    type: "Rotational",
-  },
+    { id: "1", name: "General Shift", start: "09:00", end: "18:00", type: "fixed", isActive: true },
+    { id: "2", name: "Morning Shift", start: "07:00", end: "15:00", type: "fixed", isActive: true },
 ];
 
-const ShiftPolicyPage = () => {
-  const [shifts, setShifts] = useState(defaultShifts);
+export default function ShiftListPage() {
+    const router = useRouter();
 
-  // New Shift Modal State
-  const [newShift, setNewShift] = useState({
-    name: "",
-    start: "",
-    end: "",
-    type: "Fixed",
-  });
+    const [shifts, setShifts] = useState(defaultShifts);
+    const [activeTab, setActiveTab] = useState("fixed");
 
-  const addShift = () => {
-    setShifts([...shifts, { id: Date.now(), ...newShift }]);
-    setNewShift({ name: "", start: "", end: "", type: "Fixed" });
-  };
+    const [fixedShiftForm, setFixedShiftForm] = useState({
+        name: "",
+        start: "",
+        end: "",
+        breakMinutes: 60
+    });
 
-  return (
-    <div className="p-6 space-y-8">
-      {/* PAGE HEADER */}
-      <h1 className="text-2xl font-bold">Shift & Attendance Policies</h1>
+    // Rotation State for Add Dialog
+      const [rotationState, setRotationState] = useState({
+        rotationName: "",
+        rotationCode: "",
+        cycleDays: 3,
+        dayShiftMap: {},
+        isActive: true
+      });
 
-      {/* SHIFT SECTION */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex justify-between items-center">
-            Shift Management
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" /> Add Shift
-                </Button>
-              </DialogTrigger>
+        const updateRotationDay = useCallback((day, shiftId) => {
+          setRotationState(r => ({
+            ...r,
+            dayShiftMap: { ...r.dayShiftMap, [day]: shiftId }
+          }));
+        }, []);
+      
+        const handleRotationNameChange = (e) => {
+          setRotationState(r => ({ ...r, rotationName: e.target.value }));
+        };
+      
+        const handleRotationCodeChange = (e) => {
+          setRotationState(r => ({ ...r, rotationCode: e.target.value }));
+        };
+      
+        const handleRotationCycleChange = (e) => {
+          const cycleDays = Number(e.target.value);
+          setRotationState(r => ({
+            ...r,
+            cycleDays,
+            dayShiftMap: {}
+          }));
+        };
+      
+        const saveRotationShift = () => {
+          setShifts([...shifts, {
+            id: Date.now(),
+            ...rotationState,
+            type: "rotational",
+            isActive: true
+          }]);
+          setRotationState({ rotationName: "", rotationCode: "", cycleDays: 3, dayShiftMap: {}, isActive: true });
+        };
 
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Add New Shift</DialogTitle>
-                </DialogHeader>
+        
+    /* ---------------- SAVE SHIFT ---------------- */
+    const saveFixedShift = () => {
+        if (!fixedShiftForm.name || !fixedShiftForm.start || !fixedShiftForm.end) return;
 
-                <div className="space-y-4">
-                  <div>
-                    <Label>Shift Name *</Label>
-                    <Input
-                      placeholder="Example: General Shift"
-                      value={newShift.name}
-                      onChange={(e) =>
-                        setNewShift({ ...newShift, name: e.target.value })
-                      }
-                    />
-                  </div>
+        const newShift = {
+            id: Date.now().toString(),
+            ...fixedShiftForm,
+            type: "fixed",
+            isActive: true
+        };
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Start Time *</Label>
-                      <Input
-                        type="time"
-                        value={newShift.start}
-                        onChange={(e) =>
-                          setNewShift({ ...newShift, start: e.target.value })
-                        }
-                      />
-                    </div>
-                    <div>
-                      <Label>End Time *</Label>
-                      <Input
-                        type="time"
-                        value={newShift.end}
-                        onChange={(e) =>
-                          setNewShift({ ...newShift, end: e.target.value })
-                        }
-                      />
-                    </div>
-                  </div>
+        setShifts(prev => [...prev, newShift]);
 
-                  <div>
-                    <Label>Shift Type</Label>
-                    <select
-                      className="border rounded-md p-2 w-full"
-                      value={newShift.type}
-                      onChange={(e) =>
-                        setNewShift({ ...newShift, type: e.target.value })
-                      }
-                    >
-                      <option>Fixed</option>
-                      <option>Rotational</option>
-                      <option>Flexible</option>
-                    </select>
-                  </div>
+        // Redirect to settings page
+        router.push(`/admin/attendance/shifts/${newShift.id}`);
+    };
 
-                  <Button className="w-full" onClick={addShift}>
-                    Add Shift
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </CardTitle>
-        </CardHeader>
+    const toggleShiftActive = (id) => {
+        setShifts(prev =>
+            prev.map(s => s.id === id ? { ...s, isActive: !s.isActive } : s)
+        );
+    };
 
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Shift Name</TableHead>
-                <TableHead>Start</TableHead>
-                <TableHead>End</TableHead>
-                <TableHead>Type</TableHead>
-              </TableRow>
-            </TableHeader>
+    const deleteShift = (id) => {
+        setShifts(prev => prev.filter(s => s.id !== id));
+    };
 
-            <TableBody>
-              {shifts.map((shift) => (
-                <TableRow key={shift.id}>
-                  <TableCell>{shift.name}</TableCell>
-                  <TableCell>{shift.start}</TableCell>
-                  <TableCell>{shift.end}</TableCell>
-                  <TableCell>
-                    <Badge>{shift.type}</Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+    return (
+        <div className="p-6 space-y-6">
+            <h1 className="text-2xl font-bold">Shift Management</h1>
 
-      {/* ATTENDANCE POLICY SECTION */}
-      <Card>
-  <CardHeader>
-    <CardTitle>Attendance Rules & Policies</CardTitle>
-  </CardHeader>
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex justify-between items-center">
+                        Shifts
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                <Button><Plus className="h-4 w-4" /> Add Shift</Button>
+                            </DialogTrigger>
 
-  <CardContent className="space-y-10">
+                            <DialogContent className="max-w-4xl">
+                                <DialogHeader>
+                                    <DialogTitle>Create New Shift</DialogTitle>
+                                </DialogHeader>
 
-    {/* ================= GRACE TIME ================= */}
-    <div className="space-y-2">
-      <Label>Grace In Time (Minutes)</Label>
-      <Input type="number" placeholder="Example: 10" />
-      <p className="text-sm text-muted-foreground">
-        Late mark will not be applied if employee arrives within grace time.
-      </p>
-    </div>
+                                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                                    <TabsList>
+                                        <TabsTrigger value="fixed">Fixed</TabsTrigger>
+                                        <TabsTrigger value="flexible">Flexible</TabsTrigger>
+                                        <TabsTrigger value="rotation">Rotation</TabsTrigger>
+                                    </TabsList>
 
-    <div className="space-y-2">
-      <Label>Grace Out Time (Minutes)</Label>
-      <Input type="number" placeholder="Example: 5" />
-    </div>
+                                    {/* FIXED SHIFT */}
+                                    <TabsContent value="fixed" className="space-y-4 mt-4">
+                                        <div>
+                                            <Label>Shift Name</Label>
+                                            <Input
+                                                value={fixedShiftForm.name}
+                                                onChange={e => setFixedShiftForm({ ...fixedShiftForm, name: e.target.value })}
+                                            />
+                                        </div>
 
-    {/* ================= PUNCH WINDOW RULES ================= */}
-    <div className="space-y-4">
-      <Label className="font-semibold">Punch Window Rules</Label>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <Input
+                                                type="time"
+                                                onChange={e => setFixedShiftForm({ ...fixedShiftForm, start: e.target.value })}
+                                            />
+                                            <Input
+                                                type="time"
+                                                onChange={e => setFixedShiftForm({ ...fixedShiftForm, end: e.target.value })}
+                                            />
+                                        </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label>Punch-In Minute Window</Label>
-          <Input type="number" placeholder="Example: 30" />
-          <p className="text-xs text-muted-foreground">
-            Allowed minutes before/after shift start for valid IN punch.
-          </p>
+                                        <Button className="w-full" onClick={saveFixedShift}>
+                                            Save & Configure Attendance Rules
+                                        </Button>
+                                    </TabsContent>
+
+                                    {/* Flexible Shift Form */}
+                                    <TabsContent value="flexible" className="space-y-4 mt-4">
+                                        <div>
+                                            <Label>Shift Name</Label>
+                                            <Input placeholder="Flexible Shift" />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <Label>Min Work Hours</Label>
+                                                <Input type="number" placeholder="8" />
+                                            </div>
+                                            <div>
+                                                <Label>Max Work Hours</Label>
+                                                <Input type="number" placeholder="10" />
+                                            </div>
+                                        </div>
+                                        <Button className="w-full">Save Flexible Shift</Button>
+                                    </TabsContent>
+
+                                    {/* Rotation Shift Form */}
+                                    <TabsContent value="rotation" className="space-y-6 mt-4">
+                                        <div className="grid md:grid-cols-2 gap-4">
+                                            <div>
+                                                <Label>Rotation Name</Label>
+                                                <Input
+                                                    value={rotationState.rotationName}
+                                                    onChange={handleRotationNameChange}
+                                                    placeholder="3 Day Shift Rotation"
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label>Rotation Code</Label>
+                                                <Input
+                                                    value={rotationState.rotationCode}
+                                                    onChange={handleRotationCodeChange}
+                                                    placeholder="ROT_3DAY"
+                                                />
+                                            </div>
+                                            <div>
+                                                <Label>Cycle Days</Label>
+                                                <Input
+                                                    type="number"
+                                                    min={1}
+                                                    value={rotationState.cycleDays}
+                                                    onChange={handleRotationCycleChange}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <h4 className="font-semibold">Day-wise Shift Assignment</h4>
+                                            {Array.from({ length: rotationState.cycleDays }).map((_, i) => {
+                                                const day = i + 1;
+                                                return (
+                                                    <div key={day} className="flex items-center gap-4 p-3 border rounded-lg">
+                                                        <div className="w-20 font-medium">Day {day}</div>
+                                                        <Select
+                                                            value={rotationState.dayShiftMap[day] || ""}
+                                                            onValueChange={(v) => updateRotationDay(day, v)}
+                                                        >
+                                                            <SelectTrigger className="w-64">
+                                                                <SelectValue placeholder="Assign shift" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {shifts.map(s => (
+                                                                    <SelectItem key={s.id} value={s.id.toString()}>
+                                                                        {s.name} ({s.type})
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+
+                                        <Button className="w-full" onClick={saveRotationShift}>
+                                            Save Rotation Shift
+                                        </Button>
+                                    </TabsContent>
+                                </Tabs>
+                            </DialogContent>
+                        </Dialog>
+                    </CardTitle>
+                </CardHeader>
+
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Name</TableHead>
+                                <TableHead>Timing</TableHead>
+                                <TableHead>Type</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+
+                        <TableBody>
+                            {shifts.map(shift => (
+                                <TableRow key={shift.id}>
+                                    <TableCell>{shift.name}</TableCell>
+                                    <TableCell>{shift.start} - {shift.end}</TableCell>
+                                    <TableCell>
+                                        <Badge>{shift.type.toUpperCase()}</Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Switch
+                                            checked={shift.isActive}
+                                            onCheckedChange={() => toggleShiftActive(shift.id)}
+                                        />
+                                    </TableCell>
+                                    <TableCell className="flex gap-2">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => router.push(`/admin/attendance/shifts/${shift.id}`)}
+                                        >
+                                            <Settings className="h-4 w-4" />
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => deleteShift(shift.id)}
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
         </div>
-
-        <div>
-          <Label>Checkout After (Minutes)</Label>
-          <Input type="number" placeholder="Example: 240" />
-          <p className="text-xs text-muted-foreground">
-            OUT punch before this time will be ignored.
-          </p>
-        </div>
-      </div>
-    </div>
-
-    {/* ================= LATE MARK RULES ================= */}
-    <div className="space-y-4">
-      <Label className="font-semibold">Late Mark Rules</Label>
-
-      <div className="flex items-center justify-between border p-3 rounded-lg">
-        <div>
-          <p className="font-medium">Enable Late Marks</p>
-          <p className="text-sm text-muted-foreground">
-            Late arrival beyond grace time counts as late mark.
-          </p>
-        </div>
-        <Switch />
-      </div>
-
-      <div className="grid grid-cols-3 gap-4">
-        <div>
-          <Label>Late After (Minutes)</Label>
-          <Input type="number" placeholder="Example: 15" />
-        </div>
-
-        <div>
-          <Label>Late Marks → Half-Day</Label>
-          <Input type="number" placeholder="3" />
-        </div>
-
-        <div>
-          <Label>Late Marks → Absent</Label>
-          <Input type="number" placeholder="6" />
-        </div>
-      </div>
-    </div>
-
-    {/* ================= HALF DAY RULE ================= */}
-    <div className="space-y-4">
-      <div className="flex items-center justify-between border p-3 rounded-lg">
-        <div>
-          <Label>Enable Half-Day Policy</Label>
-          <p className="text-sm text-muted-foreground">
-            Half-day if minimum working hours not met.
-          </p>
-        </div>
-        <Switch />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label>Minimum Minutes for Half-Day</Label>
-          <Input type="number" placeholder="270 (4.5 hrs)" />
-        </div>
-
-        <div>
-          <Label>Minimum Minutes for Full-Day</Label>
-          <Input type="number" placeholder="480 (8 hrs)" />
-        </div>
-      </div>
-    </div>
-
-    {/* ================= OVERTIME RULES ================= */}
-    <div className="space-y-4">
-      <Label className="font-semibold">Overtime Policy</Label>
-
-      <div className="flex items-center justify-between border p-3 rounded-lg">
-        <div>
-          <p className="font-medium">Allow Overtime</p>
-          <p className="text-sm text-muted-foreground">
-            Calculate OT beyond shift working hours.
-          </p>
-        </div>
-        <Switch />
-      </div>
-
-      <div className="grid grid-cols-3 gap-4">
-        <div>
-          <Label>OT After (Minutes)</Label>
-          <Input type="number" placeholder="30" />
-        </div>
-
-        <div>
-          <Label>Minimum OT (Minutes)</Label>
-          <Input type="number" placeholder="30" />
-        </div>
-
-        <div>
-          <Label>Max OT Per Day (Minutes)</Label>
-          <Input type="number" placeholder="120" />
-        </div>
-      </div>
-    </div>
-
-    {/* ================= AUTO ABSENT ================= */}
-    <div className="flex items-center justify-between border p-3 rounded-lg">
-      <div>
-        <Label>Auto Mark Absent</Label>
-        <p className="text-sm text-muted-foreground">
-          Mark absent if no IN punch exists.
-        </p>
-      </div>
-      <Switch />
-    </div>
-
-    {/* ================= WEEKOFF ================= */}
-    <div className="space-y-2">
-      <Label>Weekoff Type</Label>
-      <select className="border rounded-md p-2 w-full">
-        <option value="FIXED">Fixed</option>
-        <option value="FLEXIBLE">Flexible</option>
-        <option value="ROTATIONAL">Rotational</option>
-      </select>
-    </div>
-
-    <div className="space-y-2">
-      <Label>Weekoff Days</Label>
-      <div className="flex flex-wrap gap-3">
-        {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d => (
-          <label key={d} className="flex items-center gap-2">
-            <input type="checkbox" /> {d}
-          </label>
-        ))}
-      </div>
-    </div>
-
-    {/* ================= WEEKDAY PARTIAL DAY RULES ================= */}
-    <div className="space-y-4 border-t pt-6">
-      <Label className="font-semibold">Weekday Partial Day Rules</Label>
-
-      {/* ONE RULE ROW (repeatable) */}
-      <div className="border rounded-lg p-4 space-y-4">
-        <div className="grid grid-cols-4 gap-4">
-          <div>
-            <Label>Day</Label>
-            <select className="border rounded-md p-2 w-full">
-              <option>Friday</option>
-              <option>Saturday</option>
-            </select>
-          </div>
-
-          <div>
-            <Label>Begins At</Label>
-            <Input type="time" />
-          </div>
-
-          <div>
-            <Label>Ends At</Label>
-            <Input type="time" />
-          </div>
-
-          <div>
-            <Label>Attendance Credit</Label>
-            <select className="border rounded-md p-2 w-full">
-              <option>FULL_DAY</option>
-              <option>HALF_DAY</option>
-              <option>PRESENT</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="flex gap-4">
-          {["1st","2nd","3rd","4th","5th"].map(o => (
-            <label key={o} className="flex items-center gap-2">
-              <input type="checkbox" /> {o}
-            </label>
-          ))}
-        </div>
-      </div>
-
-      <Button variant="outline">+ Add Partial Day Rule</Button>
-    </div>
-
-  </CardContent>
-</Card>
-
-    </div>
-  );
-};
-
-export default ShiftPolicyPage;
+    );
+}
