@@ -91,7 +91,8 @@ const SHIFT_RULE_MATRIX = {
   },
 };
 
-
+const shouldShow = (key) =>
+  SHIFT_VISIBLE_FIELDS[shiftType]?.includes(key);
 
 
 
@@ -104,9 +105,6 @@ export default function ShiftSettingsPage() {
   const searchParams = useSearchParams();
   const shiftType = searchParams.get("type");
 
-  const shouldShow = (key) =>
-  SHIFT_VISIBLE_FIELDS[shiftType]?.includes(key);
-
 
   const [enableLateMarks, setEnableLateMarks] = useState(false);
   const [enableOvertime, setEnableOvertime] = useState(false);
@@ -116,7 +114,27 @@ export default function ShiftSettingsPage() {
 
 
   /* ---------------- APPLY RULES ---------------- */
+  useEffect(() => {
+    const config = SHIFT_RULE_MATRIX[shiftType];
+    if (!config) return;
 
+    setPolicy(prev => {
+      const updated = { ...prev };
+
+      config.disable.forEach(key => {
+        if (key === "weekoffConfig") {
+          updated.weekoffConfig = {}; // ALWAYS object
+        }
+        else if (Array.isArray(prev[key])) {
+          updated[key] = [];      //  arrays stay arrays
+        } else {
+          updated[key] = null;    // numbers / booleans can be null
+        }
+      });
+
+      return updated;
+    });
+  }, [shiftType]);
 
 
 
@@ -182,7 +200,6 @@ export default function ShiftSettingsPage() {
   };
 
 
-
   const isDisabled = (key) =>
     SHIFT_RULE_MATRIX[shiftType]?.disable.includes(key);
 
@@ -222,21 +239,18 @@ export default function ShiftSettingsPage() {
         >
 
           {/* ================= GRACE TIME ================= */}
-          {
-            shouldShow("graceInMinutes") && (
-            <div className="space-y-2">
-              <Label>Grace In Time (Minutes)</Label>
-              <Input
-                type="number"
-                value={policy.graceInMinutes ?? ""}
-                onChange={e => updatePolicy("graceInMinutes", +e.target.value)}
-              />
-              <p className="text-sm text-muted-foreground">
-                Late mark will not be applied if employee arrives within grace time.
-              </p>
-            </div>)
-          }
-
+          <div className="space-y-2">
+            <Label>Grace In Time (Minutes)</Label>
+            <Input
+              type="number"
+              disabled={isDisabled("graceInMinutes")}
+              value={policy.graceInMinutes ?? ""}
+              onChange={e => updatePolicy("graceInMinutes", +e.target.value)}
+            />
+            <p className="text-sm text-muted-foreground">
+              Late mark will not be applied if employee arrives within grace time.
+            </p>
+          </div>
 
           <div className="space-y-2">
             <Label>Grace Out Time (Minutes)</Label>
@@ -581,7 +595,7 @@ export default function ShiftSettingsPage() {
 
 
 
-
+        
 
           <div className="flex items-center justify-between border p-3 rounded-lg">
             <div>
